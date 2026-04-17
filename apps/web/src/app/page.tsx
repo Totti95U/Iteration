@@ -567,6 +567,7 @@ export default function Home() {
                     既存タスク流用
                   </Button>
                 </div>
+                <p className="mt-2 text-xs text-zinc-500">新規は空フォーム、テンプレートは定型入力、既存タスク流用は選択したタスク内容を複製します。</p>
 
                 {createMode === "template" && (
                   <div className="mt-3 space-y-2">
