@@ -19,7 +19,7 @@ Deliver the next useful piece of work end-to-end.
 
 1. Determine the starting point.
    - Prefer an explicitly provided issue, ticket, or bug report.
-   - Otherwise inspect the repository's open issues or task list.
+   - Otherwise inspect the repository's open issues (to see this use `github` mcp server) or task list.
    - If there are no open issues, look for the smallest clearly actionable maintenance item in the codebase.
 
 2. Choose the work item.
