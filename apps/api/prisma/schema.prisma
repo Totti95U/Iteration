@@ -1,0 +1,132 @@
+generator client {
+    provider = "prisma-client"
+    output   = "../src/generated/prisma"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+enum TaskType {
+    DAILY
+    WEEKLY
+    SEASON
+}
+
+enum RewardScope {
+    TOTAL
+    SEASON
+}
+
+model UserProfile {
+    id          String            @id @db.Uuid
+    email       String?           @unique
+    displayName String?
+    createdAt   DateTime          @default(now())
+    updatedAt   DateTime          @updatedAt
+    tasks       Task[]
+    rewards     Reward[]
+    xpOptions   XpOption[]
+    progress    UserProgress?
+    seasonState UserSeasonState[]
+}
+
+model Season {
+    id              String            @id @default(cuid())
+    name            String
+    startsAt        DateTime
+    endsAt          DateTime
+    createdAt       DateTime          @default(now())
+    updatedAt       DateTime          @updatedAt
+    progressRecords UserProgress[]
+    states          UserSeasonState[]
+    tasks           Task[]
+    rewards         Reward[]
+
+    @@unique([startsAt, endsAt])
+}
+
+model UserSeasonState {
+    id           String    @id @default(cuid())
+    userId       String    @db.Uuid
+    seasonId     String
+    weeklyUnseen Boolean   @default(true)
+    seasonUnseen Boolean   @default(true)
+    weeklySeenAt DateTime?
+    seasonSeenAt DateTime?
+    createdAt    DateTime  @default(now())
+    updatedAt    DateTime  @updatedAt
+    user         UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+    season       Season      @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+
+    @@unique([userId, seasonId])
+}
+
+model UserProgress {
+    id              String      @id @default(cuid())
+    userId          String      @unique @db.Uuid
+    currentSeasonId String?
+    totalXp         Int         @default(0)
+    totalLevel      Int         @default(1)
+    seasonXp        Int         @default(0)
+    seasonLevel     Int         @default(1)
+    createdAt       DateTime    @default(now())
+    updatedAt       DateTime    @updatedAt
+    user            UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+    currentSeason   Season?     @relation(fields: [currentSeasonId], references: [id], onDelete: SetNull)
+}
+
+model Task {
+    id             String      @id @default(cuid())
+    userId         String      @db.Uuid
+    seasonId       String?
+    title          String
+    description    String?
+    type           TaskType
+    targetCount    Int         @default(1)
+    currentCount   Int         @default(0)
+    xpValue        Int
+    rewardHint     String?
+    isCompleted    Boolean     @default(false)
+    completedAt    DateTime?
+    lockUntilReset Boolean     @default(true)
+    createdAt      DateTime    @default(now())
+    updatedAt      DateTime    @updatedAt
+    user           UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+    season         Season?     @relation(fields: [seasonId], references: [id], onDelete: SetNull)
+
+    @@index([userId, type])
+}
+
+model Reward {
+    id               String      @id @default(cuid())
+    userId           String      @db.Uuid
+    seasonId         String?
+    title            String
+    description      String?
+    scope            RewardScope
+    requiredLevel    Int
+    isClaimed        Boolean     @default(false)
+    claimedAt        DateTime?
+    createdAt        DateTime    @default(now())
+    updatedAt        DateTime    @updatedAt
+    user             UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+    season           Season?     @relation(fields: [seasonId], references: [id], onDelete: SetNull)
+
+    @@index([userId, scope])
+}
+
+model XpOption {
+    id        String      @id @default(cuid())
+    userId    String      @db.Uuid
+    type      TaskType
+    label     String
+    value     Int
+    sortOrder Int
+    createdAt DateTime    @default(now())
+    updatedAt DateTime    @updatedAt
+    user      UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@unique([userId, type, sortOrder])
+}
