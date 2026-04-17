@@ -659,6 +659,7 @@ export default function Home() {
               {editTaskId && (
                 <div className="rounded-lg border border-zinc-200 p-4">
                   <p className="text-sm font-semibold text-zinc-700">タスク編集</p>
+                  <p className="mt-1 text-xs text-zinc-500">編集対象ID: {editTaskId}</p>
                   <div className="mt-3 grid gap-3 md:grid-cols-2">
                     <label className="text-xs text-zinc-600 md:col-span-2">
                       タイトル
