@@ -5,7 +5,7 @@ description: Turn newly discovered bugs or feature requests into a clear require
 
 # Issue Definition and Issue Creation
 
-Use this skill when the user has found a problem, gap, bug, or new request and needs it turned into a well-scoped issue.
+Use this skill when the user has found a problem, gap, bug, or new request and needs it turned into a well-scoped GitHub issue.
 
 This skill is meant to be used together with `grill-me`.
 Follow the same one-question-at-a-time style when requirements are unclear, and keep drilling down until the issue can be written with confidence.
@@ -20,6 +20,8 @@ Convert an informal request into an issue that is ready to be filed in GitHub, w
 - acceptance criteria
 - dependencies or related work
 - known risks, constraints, or open questions
+
+If the request is only for a test or validation issue, keep the scope intentionally small and label it as such in the title or body.
 
 ## Workflow
 
@@ -41,11 +43,13 @@ Convert an informal request into an issue that is ready to be filed in GitHub, w
    - For research tasks: capture the question, hypothesis, evaluation method, and output format.
 
 4. Write the issue draft.
-   - Title: short and action-oriented.
-   - Summary: 2 to 4 sentences.
+   - Title: short, specific, and action-oriented.
+   - Summary: 2 to 4 sentences that explain why the issue exists.
+   - Context: the relevant user story, bug behavior, or design motivation.
    - Requirements: a flat list of what must be true.
    - Acceptance criteria: observable completion conditions.
-   - Notes: dependencies, non-goals, risks, edge cases, and follow-up work.
+   - Dependencies: upstream or downstream work that must happen first.
+   - Risks / Open Questions: anything unresolved that could change scope.
 
 5. Validate completeness.
    - Check that the issue is specific enough for implementation or triage.
@@ -53,7 +57,8 @@ Convert an informal request into an issue that is ready to be filed in GitHub, w
    - Check that any unresolved ambiguity is called out explicitly.
 
 6. Create the GitHub issue when the scope is clear enough.
-   - Use the repository's issue creation flow available in the current environment.
+   - Use the repository's issue creation flow available in the current environment, specifically the GitHub issue creation tools.
+   - Do not use pull request review comment tools for issue creation.
    - If the user only wants a draft, stop after producing the issue body.
 
 ## Issue Template
@@ -74,12 +79,15 @@ Use this structure when writing the issue body:
 ## Risks / Open Questions
 ```
 
+If the issue is a test issue, keep the body minimal and make that explicit so it is easy to identify and later close or delete.
+
 ## Decision Rules
 
 - If the request is still ambiguous after one round of questioning, continue with the narrowest possible question.
 - If multiple interpretations exist, surface them and recommend one.
 - If the request touches several concerns, split it into separate issues instead of forcing one oversized issue.
 - If the user is already in a debugging or planning workflow, preserve the language and assumptions already in use.
+- If a user asks for issue registration, prefer creating a GitHub issue directly rather than routing through review or discussion comments.
 
 ## Quality Bar
 
