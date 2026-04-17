@@ -2,7 +2,7 @@
 name: 'Coding Agent'
 description: 'This agent is designed to assist with coding tasks and provide support for various programming languages.'
 model: GPT-5.3-Codex (copilot)
-tools: [execute, read, edit, search, web, agent, todo, github/*]
+tools: [vscode, execute, read, edit, search, web, agent, todo, github/*]
 ---
 
 # Coding Agent
