@@ -510,6 +510,7 @@ export default function Home() {
                       <p className="text-sm text-zinc-600">{selectedTaskQuery.data.task.description ?? "説明なし"}</p>
                       <p className="text-sm text-zinc-700">進捗: {selectedTaskQuery.data.task.currentCount}/{selectedTaskQuery.data.task.targetCount}</p>
                       <p className="text-sm text-zinc-700">経験値: {selectedTaskQuery.data.task.xpValue} XP</p>
+                                            <p className="text-xs text-zinc-500">作成日時: {new Date(selectedTaskQuery.data.task.createdAt).toLocaleString()}</p>
                       <div className="flex flex-wrap gap-2">
                         <Button size="sm" onClick={() => taskActionMutation.mutate({ taskId: selectedTaskQuery.data!.task.id, action: "increment" })} disabled={selectedTaskQuery.data.task.isCompleted}>
                           +1
