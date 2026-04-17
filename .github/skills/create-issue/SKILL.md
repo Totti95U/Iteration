@@ -7,7 +7,7 @@ description: Turn newly discovered bugs or feature requests into a clear require
 
 Use this skill when the user has found a problem, gap, bug, or new request and needs it turned into a well-scoped GitHub issue.
 
-This skill is meant to be used together with `grill-me`.
+This skill is meant to be used together with `/grill-me`.
 Follow the same one-question-at-a-time style when requirements are unclear, and keep drilling down until the issue can be written with confidence.
 
 ## Goal
