@@ -70,7 +70,7 @@ function hasIssueCloseIntentInToolInput(toolInput) {
 }
 
 function policyMessage() {
-    return "Issue workflow policy: after completing issue-related work, create a commit. The issue id must be included in the commit message. Close the related issue only after user verification confirms no problems.";
+    return "Issue workflow policy: after completing issue-related work, create a commit. The issue id must be included in the commit message as #<issue_id>. Close the related issue only after user verification confirms no problems.";
 }
 
 function hasUncommittedChanges() {
