@@ -51,6 +51,17 @@ type BootstrapResponse = {
   }>;
 };
 
+type TasksResponse = { tasks: Task[] };
+type TaskDetailResponse = { task: Task };
+
+type CachedTaskSnapshots = {
+  daily: TasksResponse | undefined;
+  weekly: TasksResponse | undefined;
+  season: TasksResponse | undefined;
+  all: TasksResponse | undefined;
+  detail: TaskDetailResponse | undefined;
+};
+
 type TaskFormState = {
   title: string;
   description: string;
@@ -165,6 +176,97 @@ export default function Home() {
   const [createForm, setCreateForm] = useState<TaskFormState>(() => emptyTaskForm("DAILY"));
   const [editForm, setEditForm] = useState<TaskFormState>(() => emptyTaskForm("DAILY"));
   const [destructiveTarget, setDestructiveTarget] = useState<DestructiveTarget | null>(null);
+  const [mutationError, setMutationError] = useState<string | null>(null);
+
+  const taskListKey = (type: TaskType | "all") => ["tasks", type, sessionInfo?.email] as const;
+  const taskDetailKey = (taskId: string) => ["task-detail", taskId, sessionInfo?.email] as const;
+
+  function snapshotTaskCaches(taskId: string): CachedTaskSnapshots {
+    return {
+      daily: queryClient.getQueryData<TasksResponse>(taskListKey("DAILY")),
+      weekly: queryClient.getQueryData<TasksResponse>(taskListKey("WEEKLY")),
+      season: queryClient.getQueryData<TasksResponse>(taskListKey("SEASON")),
+      all: queryClient.getQueryData<TasksResponse>(taskListKey("all")),
+      detail: queryClient.getQueryData<TaskDetailResponse>(taskDetailKey(taskId)),
+    };
+  }
+
+  function restoreTaskCaches(snapshots: CachedTaskSnapshots): void {
+    queryClient.setQueryData(taskListKey("DAILY"), snapshots.daily);
+    queryClient.setQueryData(taskListKey("WEEKLY"), snapshots.weekly);
+    queryClient.setQueryData(taskListKey("SEASON"), snapshots.season);
+    queryClient.setQueryData(taskListKey("all"), snapshots.all);
+
+    if (snapshots.detail) {
+      queryClient.setQueryData(taskDetailKey(snapshots.detail.task.id), snapshots.detail);
+    }
+  }
+
+  function upsertTaskInList(list: Task[] | undefined, task: Task, include: boolean): Task[] | undefined {
+    if (!list) {
+      return list;
+    }
+
+    const withoutTarget = list.filter((item) => item.id !== task.id);
+    if (!include) {
+      return withoutTarget;
+    }
+
+    return [task, ...withoutTarget];
+  }
+
+  function applyTaskToCaches(task: Task): void {
+    queryClient.setQueryData<TasksResponse>(taskListKey("DAILY"), (prev) =>
+      prev ? { tasks: upsertTaskInList(prev.tasks, task, task.type === "DAILY") ?? prev.tasks } : prev,
+    );
+    queryClient.setQueryData<TasksResponse>(taskListKey("WEEKLY"), (prev) =>
+      prev ? { tasks: upsertTaskInList(prev.tasks, task, task.type === "WEEKLY") ?? prev.tasks } : prev,
+    );
+    queryClient.setQueryData<TasksResponse>(taskListKey("SEASON"), (prev) =>
+      prev ? { tasks: upsertTaskInList(prev.tasks, task, task.type === "SEASON") ?? prev.tasks } : prev,
+    );
+    queryClient.setQueryData<TasksResponse>(taskListKey("all"), (prev) =>
+      prev ? { tasks: upsertTaskInList(prev.tasks, task, true) ?? prev.tasks } : prev,
+    );
+    queryClient.setQueryData<TaskDetailResponse>(taskDetailKey(task.id), { task });
+  }
+
+  function applyOptimisticTaskAction(task: Task, action: "increment" | "decrement" | "reset" | "complete"): Task {
+    if (task.isCompleted) {
+      return task;
+    }
+
+    if (action === "increment") {
+      return {
+        ...task,
+        currentCount: Math.min(task.targetCount, task.currentCount + 1),
+      };
+    }
+
+    if (action === "decrement") {
+      return {
+        ...task,
+        currentCount: Math.max(0, task.currentCount - 1),
+      };
+    }
+
+    if (action === "reset") {
+      return {
+        ...task,
+        currentCount: 0,
+      };
+    }
+
+    if (task.currentCount < task.targetCount) {
+      return task;
+    }
+
+    return {
+      ...task,
+      isCompleted: true,
+      completedAt: new Date().toISOString(),
+    };
+  }
 
   useEffect(() => {
     if (!supabase) {
@@ -235,9 +337,9 @@ export default function Home() {
   });
 
   const tasksQuery = useQuery({
-    queryKey: ["tasks", activeTab, sessionInfo?.email],
+    queryKey: taskListKey(activeTab),
     enabled: !!sessionInfo,
-    queryFn: async (): Promise<{ tasks: Task[] }> => {
+    queryFn: async (): Promise<TasksResponse> => {
       const response = await fetch(`${apiBaseUrl}/api/tasks?type=${activeTab}`, {
         headers: authHeaders,
       });
@@ -246,14 +348,14 @@ export default function Home() {
         throw new Error("Failed to load tasks");
       }
 
-      return response.json() as Promise<{ tasks: Task[] }>;
+      return response.json() as Promise<TasksResponse>;
     },
   });
 
   const allTasksQuery = useQuery({
-    queryKey: ["tasks", "all", sessionInfo?.email],
+    queryKey: taskListKey("all"),
     enabled: !!sessionInfo,
-    queryFn: async (): Promise<{ tasks: Task[] }> => {
+    queryFn: async (): Promise<TasksResponse> => {
       const response = await fetch(`${apiBaseUrl}/api/tasks`, {
         headers: authHeaders,
       });
@@ -262,14 +364,14 @@ export default function Home() {
         throw new Error("Failed to load all tasks");
       }
 
-      return response.json() as Promise<{ tasks: Task[] }>;
+      return response.json() as Promise<TasksResponse>;
     },
   });
 
   const selectedTaskQuery = useQuery({
     queryKey: ["task-detail", selectedTaskId, sessionInfo?.email],
     enabled: !!sessionInfo && !!selectedTaskId,
-    queryFn: async (): Promise<{ task: Task }> => {
+    queryFn: async (): Promise<TaskDetailResponse> => {
       const response = await fetch(`${apiBaseUrl}/api/tasks/${selectedTaskId}`, {
         headers: authHeaders,
       });
@@ -278,12 +380,12 @@ export default function Home() {
         throw new Error("Failed to load task detail");
       }
 
-      return response.json() as Promise<{ task: Task }>;
+      return response.json() as Promise<TaskDetailResponse>;
     },
   });
 
   const createTaskMutation = useMutation({
-    mutationFn: async (payload: TaskFormState) => {
+    mutationFn: async (payload: TaskFormState): Promise<TaskDetailResponse> => {
       const response = await fetch(`${apiBaseUrl}/api/tasks`, {
         method: "POST",
         headers: authHeaders,
@@ -294,9 +396,78 @@ export default function Home() {
         throw new Error("Failed to create task");
       }
 
-      return response.json();
+      return response.json() as Promise<TaskDetailResponse>;
     },
-    onSuccess: () => {
+    onMutate: async (payload) => {
+      setMutationError(null);
+      await queryClient.cancelQueries({ queryKey: ["tasks"] });
+
+      const tempId = `temp-${Date.now()}`;
+      const optimisticTask: Task = {
+        id: tempId,
+        title: payload.title,
+        description: payload.description || null,
+        type: payload.type,
+        targetCount: Math.max(1, payload.targetCount),
+        currentCount: 0,
+        xpValue: payload.xpValue,
+        rewardHint: payload.rewardHint || null,
+        isCompleted: false,
+        completedAt: null,
+        createdAt: new Date().toISOString(),
+      };
+
+      const snapshots = snapshotTaskCaches(tempId);
+      applyTaskToCaches(optimisticTask);
+
+      return {
+        snapshots,
+        tempId,
+      };
+    },
+    onError: (error, _payload, context) => {
+      if (context?.snapshots) {
+        restoreTaskCaches(context.snapshots);
+      }
+      setMutationError((error as Error).message);
+    },
+    onSuccess: (result, _payload, context) => {
+      if (context?.tempId) {
+        queryClient.setQueryData<TasksResponse>(taskListKey("DAILY"), (prev) =>
+          prev
+            ? {
+                tasks: prev.tasks.map((task) => (task.id === context.tempId ? result.task : task)),
+              }
+            : prev,
+        );
+        queryClient.setQueryData<TasksResponse>(taskListKey("WEEKLY"), (prev) =>
+          prev
+            ? {
+                tasks: prev.tasks.map((task) => (task.id === context.tempId ? result.task : task)),
+              }
+            : prev,
+        );
+        queryClient.setQueryData<TasksResponse>(taskListKey("SEASON"), (prev) =>
+          prev
+            ? {
+                tasks: prev.tasks.map((task) => (task.id === context.tempId ? result.task : task)),
+              }
+            : prev,
+        );
+        queryClient.setQueryData<TasksResponse>(taskListKey("all"), (prev) =>
+          prev
+            ? {
+                tasks: prev.tasks.map((task) => (task.id === context.tempId ? result.task : task)),
+              }
+            : prev,
+        );
+
+        if (selectedTaskId === context.tempId) {
+          setSelectedTaskId(result.task.id);
+        }
+      }
+
+      queryClient.setQueryData<TaskDetailResponse>(taskDetailKey(result.task.id), result);
       void queryClient.invalidateQueries({ queryKey: ["tasks"] });
       setCreateForm(emptyTaskForm(activeTab, createForm.xpValue));
       setCreateMode("new");
@@ -305,7 +476,7 @@ export default function Home() {
   });
 
   const updateTaskMutation = useMutation({
-    mutationFn: async ({ taskId, payload }: { taskId: string; payload: TaskFormState }) => {
+    mutationFn: async ({ taskId, payload }: { taskId: string; payload: TaskFormState }): Promise<TaskDetailResponse> => {
       const response = await fetch(`${apiBaseUrl}/api/tasks/${taskId}`, {
         method: "PUT",
         headers: authHeaders,
@@ -316,9 +487,44 @@ export default function Home() {
         throw new Error("Failed to update task");
       }
 
-      return response.json();
+      return response.json() as Promise<TaskDetailResponse>;
     },
-    onSuccess: (_result, variables) => {
+    onMutate: async ({ taskId, payload }) => {
+      setMutationError(null);
+      await queryClient.cancelQueries({ queryKey: ["tasks"] });
+      await queryClient.cancelQueries({ queryKey: ["task-detail", taskId] });
+
+      const snapshots = snapshotTaskCaches(taskId);
+      const baseTask =
+        snapshots.detail?.task ??
+        snapshots.all?.tasks.find((task) => task.id === taskId) ??
+        snapshots.daily?.tasks.find((task) => task.id === taskId) ??
+        snapshots.weekly?.tasks.find((task) => task.id === taskId) ??
+        snapshots.season?.tasks.find((task) => task.id === taskId);
+
+      if (baseTask) {
+        const optimisticTask: Task = {
+          ...baseTask,
+          title: payload.title,
+          description: payload.description || null,
+          type: payload.type,
+          targetCount: Math.max(1, payload.targetCount),
+          xpValue: payload.xpValue,
+          rewardHint: payload.rewardHint || null,
+        };
+        applyTaskToCaches(optimisticTask);
+      }
+
+      return { snapshots };
+    },
+    onError: (error, _variables, context) => {
+      if (context?.snapshots) {
+        restoreTaskCaches(context.snapshots);
+      }
+      setMutationError((error as Error).message);
+    },
+    onSuccess: (result, variables) => {
+      applyTaskToCaches(result.task);
       void queryClient.invalidateQueries({ queryKey: ["tasks"] });
       void queryClient.invalidateQueries({ queryKey: ["task-detail", variables.taskId] });
       setEditTaskId(null);
@@ -349,7 +555,7 @@ export default function Home() {
   });
 
   const taskActionMutation = useMutation({
-    mutationFn: async ({ taskId, action }: { taskId: string; action: "increment" | "decrement" | "reset" | "complete" }) => {
+    mutationFn: async ({ taskId, action }: { taskId: string; action: "increment" | "decrement" | "reset" | "complete" }): Promise<TaskDetailResponse> => {
       const response = await fetch(`${apiBaseUrl}/api/tasks/${taskId}`, {
         method: "PATCH",
         headers: authHeaders,
@@ -360,9 +566,55 @@ export default function Home() {
         throw new Error("Failed task action");
       }
 
-      return response.json();
+      return response.json() as Promise<TaskDetailResponse>;
     },
-    onSuccess: (_result, variables) => {
+    onMutate: async ({ taskId, action }) => {
+      setMutationError(null);
+      await queryClient.cancelQueries({ queryKey: ["tasks"] });
+      await queryClient.cancelQueries({ queryKey: ["task-detail", taskId] });
+      await queryClient.cancelQueries({ queryKey: ["bootstrap"] });
+
+      const snapshots = snapshotTaskCaches(taskId);
+      const bootstrapSnapshot = queryClient.getQueryData<BootstrapResponse>(["bootstrap", sessionInfo?.email]);
+      const baseTask =
+        snapshots.detail?.task ??
+        snapshots.all?.tasks.find((task) => task.id === taskId) ??
+        snapshots.daily?.tasks.find((task) => task.id === taskId) ??
+        snapshots.weekly?.tasks.find((task) => task.id === taskId) ??
+        snapshots.season?.tasks.find((task) => task.id === taskId);
+
+      if (baseTask) {
+        const optimisticTask = applyOptimisticTaskAction(baseTask, action);
+        applyTaskToCaches(optimisticTask);
+
+        if (action === "complete" && optimisticTask.isCompleted && bootstrapSnapshot) {
+          queryClient.setQueryData<BootstrapResponse>(["bootstrap", sessionInfo?.email], {
+            ...bootstrapSnapshot,
+            progress: {
+              ...bootstrapSnapshot.progress,
+              totalXp: bootstrapSnapshot.progress.totalXp + optimisticTask.xpValue,
+              seasonXp: bootstrapSnapshot.progress.seasonXp + optimisticTask.xpValue,
+            },
+          });
+        }
+      }
+
+      return {
+        snapshots,
+        bootstrapSnapshot,
+      };
+    },
+    onError: (error, _variables, context) => {
+      if (context?.snapshots) {
+        restoreTaskCaches(context.snapshots);
+      }
+      if (context?.bootstrapSnapshot) {
+        queryClient.setQueryData(["bootstrap", sessionInfo?.email], context.bootstrapSnapshot);
+      }
+      setMutationError((error as Error).message);
+    },
+    onSuccess: (result, variables) => {
+      applyTaskToCaches(result.task);
       void queryClient.invalidateQueries({ queryKey: ["tasks"] });
       void queryClient.invalidateQueries({ queryKey: ["task-detail", variables.taskId] });
       void queryClient.invalidateQueries({ queryKey: ["bootstrap"] });
@@ -543,6 +795,7 @@ export default function Home() {
             データ取得に失敗しました: {(bootstrapQuery.error as Error).message}
           </p>
         )}
+        {mutationError && <p className="mt-2 text-sm text-red-600">操作に失敗しました: {mutationError}</p>}
 
         {bootstrapQuery.data && (
           <div className="space-y-6">
