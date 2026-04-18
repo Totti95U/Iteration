@@ -1,5 +1,6 @@
 import { Prisma, TaskType } from "../generated/prisma/client";
 import { Router } from "express";
+import { gameSettings } from "../config/game-settings";
 import { prisma } from "../lib/prisma";
 import { AuthenticatedRequest, requireAuth } from "../middleware/auth";
 import { levelFromXp } from "../utils/season";
@@ -82,7 +83,7 @@ taskRouter.post("/", requireAuth, async (req: AuthenticatedRequest, res) => {
             title,
             description,
             type,
-            targetCount: Math.max(1, targetCount ?? 1),
+            targetCount: Math.max(gameSettings.minTaskTargetCount, targetCount ?? gameSettings.minTaskTargetCount),
             xpValue,
             rewardHint,
             seasonId: type === TaskType.SEASON ? progress?.currentSeasonId : null,
@@ -139,7 +140,7 @@ taskRouter.put("/:taskId", requireAuth, async (req: AuthenticatedRequest, res) =
             title,
             description,
             type,
-            targetCount: Math.max(1, targetCount ?? existingTask.targetCount),
+            targetCount: Math.max(gameSettings.minTaskTargetCount, targetCount ?? existingTask.targetCount),
             xpValue,
             rewardHint,
             seasonId: type === TaskType.SEASON ? progress?.currentSeasonId : null,
@@ -216,7 +217,7 @@ taskRouter.patch("/:taskId", requireAuth, async (req: AuthenticatedRequest, res)
         const updated = await prisma.task.update({
             where: { id: task.id },
             data: {
-                currentCount: Math.max(0, task.currentCount - 1),
+                currentCount: Math.max(gameSettings.minTaskCurrentCount, task.currentCount - 1),
             },
         });
         res.json({ task: updated });

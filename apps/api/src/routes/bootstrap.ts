@@ -1,22 +1,10 @@
-import { TaskType } from "../generated/prisma/client";
 import { Router } from "express";
+import { defaultXpOptionTemplates } from "../config/game-settings";
 import { prisma } from "../lib/prisma";
 import { AuthenticatedRequest, requireAuth } from "../middleware/auth";
 import { getCurrentSeasonRange } from "../utils/season";
 
 export const bootstrapRouter = Router();
-
-const defaultXpOptions = [
-    { type: TaskType.DAILY, value: 5, label: "Daily 5", sortOrder: 0 },
-    { type: TaskType.DAILY, value: 10, label: "Daily 10", sortOrder: 1 },
-    { type: TaskType.DAILY, value: 15, label: "Daily 15", sortOrder: 2 },
-    { type: TaskType.WEEKLY, value: 20, label: "Weekly 20", sortOrder: 0 },
-    { type: TaskType.WEEKLY, value: 35, label: "Weekly 35", sortOrder: 1 },
-    { type: TaskType.WEEKLY, value: 50, label: "Weekly 50", sortOrder: 2 },
-    { type: TaskType.SEASON, value: 120, label: "Season 120", sortOrder: 0 },
-    { type: TaskType.SEASON, value: 180, label: "Season 180", sortOrder: 1 },
-    { type: TaskType.SEASON, value: 240, label: "Season 240", sortOrder: 2 },
-];
 
 bootstrapRouter.get("/", requireAuth, async (req: AuthenticatedRequest, res) => {
     const userId = req.authUser!.id;
@@ -86,7 +74,7 @@ bootstrapRouter.get("/", requireAuth, async (req: AuthenticatedRequest, res) => 
 
         if (optionCount === 0) {
             await tx.xpOption.createMany({
-                data: defaultXpOptions.map((option) => ({
+                data: defaultXpOptionTemplates.map((option) => ({
                     ...option,
                     userId,
                 })),
