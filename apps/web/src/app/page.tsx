@@ -65,6 +65,23 @@ type DeleteTarget = {
   title: string;
 };
 
+type ResetTarget = {
+  id: string;
+  title: string;
+  currentCount: number;
+  targetCount: number;
+};
+
+type DestructiveTarget =
+  | {
+      kind: "delete";
+      payload: DeleteTarget;
+    }
+  | {
+      kind: "reset";
+      payload: ResetTarget;
+    };
+
 const taskTemplates: Record<TaskType, Array<Omit<TaskFormState, "type"> & { name: string }>> = {
   DAILY: [
     {
@@ -136,7 +153,7 @@ function emptyTaskForm(type: TaskType, xpValue = 10): TaskFormState {
 }
 
 export default function Home() {
-  const [supabase, setSupabase] = useState<SupabaseClient | null>(null);
+  const [supabase] = useState<SupabaseClient>(() => createSupabaseBrowserClient());
   const [sessionInfo, setSessionInfo] = useState<SessionInfo | null>(null);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [createMode, setCreateMode] = useState<"new" | "template" | "duplicate">("new");
@@ -147,11 +164,7 @@ export default function Home() {
   const queryClient = useQueryClient();
   const [createForm, setCreateForm] = useState<TaskFormState>(() => emptyTaskForm("DAILY"));
   const [editForm, setEditForm] = useState<TaskFormState>(() => emptyTaskForm("DAILY"));
-  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
-
-  useEffect(() => {
-    setSupabase(createSupabaseBrowserClient());
-  }, []);
+  const [destructiveTarget, setDestructiveTarget] = useState<DestructiveTarget | null>(null);
 
   useEffect(() => {
     if (!supabase) {
@@ -187,10 +200,6 @@ export default function Home() {
 
     return () => subscription.unsubscribe();
   }, [supabase]);
-
-  useEffect(() => {
-    setCreateForm((prev) => ({ ...prev, type: activeTab }));
-  }, [activeTab]);
 
   const authHeaders = sessionInfo
     ? {
@@ -273,15 +282,6 @@ export default function Home() {
     },
   });
 
-  useEffect(() => {
-    const option = bootstrapQuery.data?.xpOptions.find((value) => value.type === createForm.type);
-    if (!option) {
-      return;
-    }
-
-    setCreateForm((prev) => (prev.xpValue === option.value ? prev : { ...prev, xpValue: option.value }));
-  }, [bootstrapQuery.data?.xpOptions, createForm.type]);
-
   const createTaskMutation = useMutation({
     mutationFn: async (payload: TaskFormState) => {
       const response = await fetch(`${apiBaseUrl}/api/tasks`, {
@@ -349,7 +349,7 @@ export default function Home() {
   });
 
   const taskActionMutation = useMutation({
-    mutationFn: async ({ taskId, action }: { taskId: string; action: "increment" | "decrement" | "complete" }) => {
+    mutationFn: async ({ taskId, action }: { taskId: string; action: "increment" | "decrement" | "reset" | "complete" }) => {
       const response = await fetch(`${apiBaseUrl}/api/tasks/${taskId}`, {
         method: "PATCH",
         headers: authHeaders,
@@ -370,6 +370,10 @@ export default function Home() {
   });
 
   const activeOptions = bootstrapQuery.data?.xpOptions.filter((option) => option.type === createForm.type) ?? [];
+  const resolvedCreateXpValue =
+    activeOptions.some((option) => option.value === createForm.xpValue)
+      ? createForm.xpValue
+      : (activeOptions[0]?.value ?? createForm.xpValue);
   const duplicateCandidates = allTasksQuery.data?.tasks.filter((task) => task.type === createForm.type) ?? [];
 
   function applyTemplate(index: number, type: TaskType): void {
@@ -424,7 +428,10 @@ export default function Home() {
   }
 
   function submitCreateForm(): void {
-    createTaskMutation.mutate(createForm);
+    createTaskMutation.mutate({
+      ...createForm,
+      xpValue: resolvedCreateXpValue,
+    });
   }
 
   function submitEditForm(): void {
@@ -436,28 +443,70 @@ export default function Home() {
   }
 
   function handleDeleteTask(taskId: string, taskTitle: string): void {
-    setDeleteTarget({ id: taskId, title: taskTitle });
+    setDestructiveTarget({
+      kind: "delete",
+      payload: { id: taskId, title: taskTitle },
+    });
   }
 
-  function confirmDeleteTask(): void {
-    if (!deleteTarget) {
+  function handleConfirmDestructiveAction(): void {
+    if (!destructiveTarget) {
       return;
     }
 
-    deleteTaskMutation.mutate(deleteTarget.id, {
-      onSuccess: () => {
-        setDeleteTarget(null);
+    if (destructiveTarget.kind === "delete") {
+      deleteTaskMutation.mutate(destructiveTarget.payload.id, {
+        onSuccess: () => {
+          setDestructiveTarget(null);
+        },
+      });
+      return;
+    }
+
+    taskActionMutation.mutate(
+      { taskId: destructiveTarget.payload.id, action: "reset" },
+      {
+        onSuccess: () => {
+          setDestructiveTarget(null);
+        },
+      },
+    );
+  }
+
+  function handleResetProgress(task: Task): void {
+    setDestructiveTarget({
+      kind: "reset",
+      payload: {
+        id: task.id,
+        title: task.title,
+        currentCount: task.currentCount,
+        targetCount: task.targetCount,
       },
     });
   }
 
-  if (!supabase) {
-    return (
-      <main className="mx-auto flex min-h-screen w-full max-w-2xl flex-col justify-center p-6">
-        <p className="text-zinc-600">初期化中です...</p>
-      </main>
-    );
-  }
+  const isDestructivePending = deleteTaskMutation.isPending || taskActionMutation.isPending;
+
+  const dialogTitle =
+    destructiveTarget?.kind === "delete"
+      ? "タスクを削除しますか？"
+      : destructiveTarget?.kind === "reset"
+        ? "進捗をリセットしますか？"
+        : "";
+
+  const dialogDescription =
+    destructiveTarget?.kind === "delete"
+      ? `「${destructiveTarget.payload.title}」は完全に削除され、元に戻せません。`
+      : destructiveTarget?.kind === "reset"
+        ? `「${destructiveTarget.payload.title}」の進捗 ${destructiveTarget.payload.currentCount}/${destructiveTarget.payload.targetCount} は 0 に戻り、元に戻せません。`
+        : undefined;
+
+  const dialogConfirmLabel =
+    destructiveTarget?.kind === "delete"
+      ? "削除する"
+      : destructiveTarget?.kind === "reset"
+        ? "リセットする"
+        : "";
 
   if (!sessionInfo) {
     return (
@@ -518,7 +567,15 @@ export default function Home() {
             <div className="space-y-3">
               <div className="flex gap-2">
                 {(["DAILY", "WEEKLY", "SEASON"] as const).map((tab: TaskType) => (
-                  <Button key={tab} variant={activeTab === tab ? "primary" : "secondary"} size="sm" onClick={() => setActiveTab(tab)}>
+                  <Button
+                    key={tab}
+                    variant={activeTab === tab ? "primary" : "secondary"}
+                    size="sm"
+                    onClick={() => {
+                      setActiveTab(tab);
+                      setCreateForm((prev) => ({ ...prev, type: tab }));
+                    }}
+                  >
                     {tab}
                   </Button>
                 ))}
@@ -566,6 +623,14 @@ export default function Home() {
                         </Button>
                         <Button
                           size="sm"
+                          variant="danger"
+                          onClick={() => handleResetProgress(selectedTaskQuery.data!.task)}
+                          disabled={selectedTaskQuery.data.task.isCompleted || selectedTaskQuery.data.task.currentCount === 0 || isDestructivePending}
+                        >
+                          進捗リセット
+                        </Button>
+                        <Button
+                          size="sm"
                           variant="secondary"
                           onClick={() => taskActionMutation.mutate({ taskId: selectedTaskQuery.data!.task.id, action: "complete" })}
                           disabled={selectedTaskQuery.data.task.isCompleted || selectedTaskQuery.data.task.currentCount < selectedTaskQuery.data.task.targetCount}
@@ -590,7 +655,7 @@ export default function Home() {
                           size="sm"
                           variant="danger"
                           onClick={() => handleDeleteTask(selectedTaskQuery.data!.task.id, selectedTaskQuery.data!.task.title)}
-                          disabled={deleteTaskMutation.isPending}
+                          disabled={isDestructivePending}
                         >
                           削除
                         </Button>
@@ -689,7 +754,7 @@ export default function Home() {
                   </label>
                   <label className="text-xs text-zinc-600">
                     経験値候補
-                    <select className="mt-1 w-full rounded-md border border-zinc-300 bg-white p-2 text-sm" value={createForm.xpValue} onChange={(event) => setCreateForm((prev) => ({ ...prev, xpValue: Number(event.target.value) }))}>
+                    <select className="mt-1 w-full rounded-md border border-zinc-300 bg-white p-2 text-sm" value={resolvedCreateXpValue} onChange={(event) => setCreateForm((prev) => ({ ...prev, xpValue: Number(event.target.value) }))}>
                       {activeOptions.map((option) => (
                         <option key={option.id} value={option.value}>
                           {option.label} ({option.value} XP)
@@ -760,14 +825,14 @@ export default function Home() {
       </section>
 
       <ConfirmDialog
-        open={!!deleteTarget}
-        title="タスクを削除しますか？"
-        description={deleteTarget ? `「${deleteTarget.title}」は完全に削除され、元に戻せません。` : undefined}
-        confirmLabel="削除する"
+        open={!!destructiveTarget}
+        title={dialogTitle}
+        description={dialogDescription}
+        confirmLabel={dialogConfirmLabel}
         cancelLabel="キャンセル"
-        isPending={deleteTaskMutation.isPending}
-        onCancel={() => setDeleteTarget(null)}
-        onConfirm={confirmDeleteTask}
+        isPending={isDestructivePending}
+        onCancel={() => setDestructiveTarget(null)}
+        onConfirm={handleConfirmDestructiveAction}
       />
     </main>
   );

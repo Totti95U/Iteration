@@ -1,4 +1,6 @@
-# Issue 34 Draft: 破壊的操作の確認 UI を共通コンポーネントへ統一する
+# Issue 34: 破壊的操作の確認 UI を共通コンポーネントへ統一する
+
+Status: Closed (2026-04-18)
 
 ## Summary
 
@@ -19,12 +21,27 @@
 - ボタン順序は「キャンセル」→「確定」を統一する。
 - 新規実装時に `window.confirm` を使わないルールを記載する。
 
+## Implementation Note
+
+- 利用ガイド: `docs/confirm-dialog-guidelines.md`
+- Web 側では ESLint の `no-restricted-globals` で `confirm` を禁止する。
+
 ## Acceptance Criteria
 
 - 破壊的操作を持つ対象画面の確認 UI が共通コンポーネント利用に統一されている。
 - どの画面でも確認ダイアログの見た目と操作順序が一致している。
 - 破壊的操作実装で `window.confirm` が使われていない。
 - 開発者が参照できる利用ガイドが docs に存在する。
+
+## Completion Notes
+
+- タスク削除導線とタスク進捗リセット導線を、共通 `ConfirmDialog` ベースの単一フローに統一した。
+- 破壊的操作ガイドとして `docs/confirm-dialog-guidelines.md` を追加した。
+- Web 側 ESLint で `confirm` を禁止し、新規実装で `window.confirm` を使わない仕組みを導入した。
+- 検証:
+	- `npm run lint:web` pass
+	- `npm run build:web` pass
+	- `npm run build:api` pass
 
 ## Dependencies
 
