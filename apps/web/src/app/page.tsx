@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useUiStore } from "@/store/ui-store";
 
@@ -57,6 +58,11 @@ type TaskFormState = {
   targetCount: number;
   xpValue: number;
   rewardHint: string;
+};
+
+type DeleteTarget = {
+  id: string;
+  title: string;
 };
 
 const taskTemplates: Record<TaskType, Array<Omit<TaskFormState, "type"> & { name: string }>> = {
@@ -141,6 +147,7 @@ export default function Home() {
   const queryClient = useQueryClient();
   const [createForm, setCreateForm] = useState<TaskFormState>(() => emptyTaskForm("DAILY"));
   const [editForm, setEditForm] = useState<TaskFormState>(() => emptyTaskForm("DAILY"));
+  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
 
   useEffect(() => {
     setSupabase(createSupabaseBrowserClient());
@@ -318,6 +325,29 @@ export default function Home() {
     },
   });
 
+  const deleteTaskMutation = useMutation({
+    mutationFn: async (taskId: string) => {
+      const response = await fetch(`${apiBaseUrl}/api/tasks/${taskId}`, {
+        method: "DELETE",
+        headers: authHeaders,
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete task");
+      }
+    },
+    onSuccess: (_result, taskId) => {
+      void queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      void queryClient.invalidateQueries({ queryKey: ["task-detail", taskId] });
+      if (selectedTaskId === taskId) {
+        setSelectedTaskId(null);
+      }
+      if (editTaskId === taskId) {
+        setEditTaskId(null);
+      }
+    },
+  });
+
   const taskActionMutation = useMutation({
     mutationFn: async ({ taskId, action }: { taskId: string; action: "increment" | "decrement" | "complete" }) => {
       const response = await fetch(`${apiBaseUrl}/api/tasks/${taskId}`, {
@@ -403,6 +433,22 @@ export default function Home() {
     }
 
     updateTaskMutation.mutate({ taskId: editTaskId, payload: editForm });
+  }
+
+  function handleDeleteTask(taskId: string, taskTitle: string): void {
+    setDeleteTarget({ id: taskId, title: taskTitle });
+  }
+
+  function confirmDeleteTask(): void {
+    if (!deleteTarget) {
+      return;
+    }
+
+    deleteTaskMutation.mutate(deleteTarget.id, {
+      onSuccess: () => {
+        setDeleteTarget(null);
+      },
+    });
   }
 
   if (!supabase) {
@@ -539,6 +585,14 @@ export default function Home() {
                           }}
                         >
                           複製して新規作成
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="danger"
+                          onClick={() => handleDeleteTask(selectedTaskQuery.data!.task.id, selectedTaskQuery.data!.task.title)}
+                          disabled={deleteTaskMutation.isPending}
+                        >
+                          削除
                         </Button>
                       </div>
                     </div>
@@ -704,6 +758,17 @@ export default function Home() {
           </div>
         )}
       </section>
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title="タスクを削除しますか？"
+        description={deleteTarget ? `「${deleteTarget.title}」は完全に削除され、元に戻せません。` : undefined}
+        confirmLabel="削除する"
+        cancelLabel="キャンセル"
+        isPending={deleteTaskMutation.isPending}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={confirmDeleteTask}
+      />
     </main>
   );
 }

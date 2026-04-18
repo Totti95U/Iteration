@@ -149,6 +149,30 @@ taskRouter.put("/:taskId", requireAuth, async (req: AuthenticatedRequest, res) =
     res.json({ task: updatedTask });
 });
 
+taskRouter.delete("/:taskId", requireAuth, async (req: AuthenticatedRequest, res) => {
+    const userId = req.authUser!.id;
+    const taskIdParam = req.params.taskId;
+    const taskId = Array.isArray(taskIdParam) ? taskIdParam[0] : taskIdParam;
+
+    const existingTask = await prisma.task.findFirst({
+        where: {
+            id: taskId,
+            userId,
+        },
+    });
+
+    if (!existingTask) {
+        res.status(404).json({ error: "Task not found" });
+        return;
+    }
+
+    await prisma.task.delete({
+        where: { id: taskId },
+    });
+
+    res.status(204).send();
+});
+
 taskRouter.patch("/:taskId", requireAuth, async (req: AuthenticatedRequest, res) => {
     const userId = req.authUser!.id;
     const taskIdParam = req.params.taskId;
