@@ -15,6 +15,15 @@ const eslintConfig = defineConfig([
             "破壊的操作の確認には共通 ConfirmDialog コンポーネントを使用してください。",
         },
       ],
+      "no-restricted-properties": [
+        "error",
+        {
+          object: "window",
+          property: "confirm",
+          message:
+            "破壊的操作の確認には共通 ConfirmDialog コンポーネントを使用してください。",
+        },
+      ],
     },
   },
   // Override default ignores of eslint-config-next.

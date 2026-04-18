@@ -9,7 +9,7 @@
 - Web フロントエンドでは `apps/web/src/components/ui/confirm-dialog.tsx` を使用する。
 - 新規実装で `window.confirm` は使用しない。
 
-## 対象画面一覧（Issue 34 時点）
+## 対象画面一覧（Issue 38 時点）
 
 - タスク削除導線（実装済み・共通確認ダイアログ導入済み）
 - タスク進捗リセット導線（実装済み・共通確認ダイアログ導入済み）
@@ -33,5 +33,6 @@
 
 ## ESLint ルール
 
-`apps/web/eslint.config.mjs` で `no-restricted-globals` により `confirm` を禁止する。
+`apps/web/eslint.config.mjs` で `no-restricted-globals` により `confirm` を禁止し、
+`no-restricted-properties` により `window.confirm` も禁止する。
 このルール違反が出た場合、`ConfirmDialog` へ置き換える。
