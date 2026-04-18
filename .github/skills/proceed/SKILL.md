@@ -43,9 +43,16 @@ Deliver the next useful piece of work end-to-end.
    - Confirm there are no new errors introduced by the change.
    - If validation fails, fix the issue or explain the blocker clearly.
 
-6. Report back.
+6. Repeat 4-5 until user testing or asking for help are required
+   - Repeat the implementation and validation steps until the change can close the issue or meet the acceptance criteria.
+   - If the change requires user testing, report the change and ask for testing instructions.
+   - If you meet a blocker that cannot be resolved by inspecting the codebase or asking a narrow question, report the issue and ask for help.
+
+7. Report back.
    - Summarize what was selected, what was changed, and how it was validated.
    - Mention any remaining risks or follow-up work.
+   - If the change is complete, update the issue status and link to the relevant commits or pull requests.
+   - Update any relevant documentation or comments to reflect the change.
 
 ## Decision Rules
 
