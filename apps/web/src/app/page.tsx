@@ -3,13 +3,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useUiStore } from "@/store/ui-store";
 
 type TaskType = "DAILY" | "WEEKLY" | "SEASON";
+type TaskActionType = "increment" | "decrement" | "reset" | "complete" | "adjust";
 
 type SessionInfo = {
   accessToken: string;
@@ -151,6 +152,7 @@ const taskTemplates: Record<TaskType, Array<Omit<TaskFormState, "type"> & { name
 };
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000";
+const adjustFlushDelayMs = 200;
 
 function emptyTaskForm(type: TaskType, xpValue = 10): TaskFormState {
   return {
@@ -177,6 +179,9 @@ export default function Home() {
   const [editForm, setEditForm] = useState<TaskFormState>(() => emptyTaskForm("DAILY"));
   const [destructiveTarget, setDestructiveTarget] = useState<DestructiveTarget | null>(null);
   const [mutationError, setMutationError] = useState<string | null>(null);
+  const taskActionVersionRef = useRef<Record<string, number>>({});
+  const bufferedAdjustDeltaRef = useRef<Record<string, number>>({});
+  const bufferedAdjustTimerRef = useRef<Record<string, ReturnType<typeof setTimeout> | undefined>>({});
 
   const taskListKey = (type: TaskType | "all") => ["tasks", type, sessionInfo?.email] as const;
   const taskDetailKey = (taskId: string) => ["task-detail", taskId, sessionInfo?.email] as const;
@@ -231,7 +236,7 @@ export default function Home() {
     queryClient.setQueryData<TaskDetailResponse>(taskDetailKey(task.id), { task });
   }
 
-  function applyOptimisticTaskAction(task: Task, action: "increment" | "decrement" | "reset" | "complete"): Task {
+  function applyOptimisticTaskAction(task: Task, action: TaskActionType, delta = 0): Task {
     if (task.isCompleted) {
       return task;
     }
@@ -257,6 +262,13 @@ export default function Home() {
       };
     }
 
+    if (action === "adjust") {
+      return {
+        ...task,
+        currentCount: Math.max(0, Math.min(task.targetCount, task.currentCount + delta)),
+      };
+    }
+
     if (task.currentCount < task.targetCount) {
       return task;
     }
@@ -266,6 +278,62 @@ export default function Home() {
       isCompleted: true,
       completedAt: new Date().toISOString(),
     };
+  }
+
+  function getCachedTaskById(taskId: string): Task | undefined {
+    return (
+      queryClient.getQueryData<TaskDetailResponse>(taskDetailKey(taskId))?.task ??
+      queryClient.getQueryData<TasksResponse>(taskListKey("all"))?.tasks.find((task) => task.id === taskId) ??
+      queryClient.getQueryData<TasksResponse>(taskListKey("DAILY"))?.tasks.find((task) => task.id === taskId) ??
+      queryClient.getQueryData<TasksResponse>(taskListKey("WEEKLY"))?.tasks.find((task) => task.id === taskId) ??
+      queryClient.getQueryData<TasksResponse>(taskListKey("SEASON"))?.tasks.find((task) => task.id === taskId)
+    );
+  }
+
+  function flushBufferedAdjust(taskId: string): void {
+    const delta = bufferedAdjustDeltaRef.current[taskId] ?? 0;
+    if (delta === 0) {
+      return;
+    }
+
+    bufferedAdjustDeltaRef.current[taskId] = 0;
+    const timer = bufferedAdjustTimerRef.current[taskId];
+    if (timer) {
+      clearTimeout(timer);
+      bufferedAdjustTimerRef.current[taskId] = undefined;
+    }
+
+    taskActionMutation.mutate({
+      taskId,
+      action: "adjust",
+      delta,
+      skipOptimistic: true,
+    });
+  }
+
+  function queueBufferedAdjust(taskId: string, step: 1 | -1): void {
+    const baseTask = getCachedTaskById(taskId);
+    if (!baseTask || baseTask.isCompleted) {
+      return;
+    }
+
+    const optimisticTask = applyOptimisticTaskAction(baseTask, "adjust", step);
+    const appliedDelta = optimisticTask.currentCount - baseTask.currentCount;
+    if (appliedDelta === 0) {
+      return;
+    }
+
+    applyTaskToCaches(optimisticTask);
+    bufferedAdjustDeltaRef.current[taskId] = (bufferedAdjustDeltaRef.current[taskId] ?? 0) + appliedDelta;
+
+    const timer = bufferedAdjustTimerRef.current[taskId];
+    if (timer) {
+      clearTimeout(timer);
+    }
+
+    bufferedAdjustTimerRef.current[taskId] = setTimeout(() => {
+      flushBufferedAdjust(taskId);
+    }, adjustFlushDelayMs);
   }
 
   useEffect(() => {
@@ -302,6 +370,17 @@ export default function Home() {
 
     return () => subscription.unsubscribe();
   }, [supabase]);
+
+  useEffect(() => {
+    const timers = bufferedAdjustTimerRef.current;
+    return () => {
+      for (const timer of Object.values(timers)) {
+        if (timer) {
+          clearTimeout(timer);
+        }
+      }
+    };
+  }, []);
 
   const authHeaders = sessionInfo
     ? {
@@ -555,11 +634,11 @@ export default function Home() {
   });
 
   const taskActionMutation = useMutation({
-    mutationFn: async ({ taskId, action }: { taskId: string; action: "increment" | "decrement" | "reset" | "complete" }): Promise<TaskDetailResponse> => {
+    mutationFn: async ({ taskId, action, delta }: { taskId: string; action: TaskActionType; delta?: number; skipOptimistic?: boolean }): Promise<TaskDetailResponse> => {
       const response = await fetch(`${apiBaseUrl}/api/tasks/${taskId}`, {
         method: "PATCH",
         headers: authHeaders,
-        body: JSON.stringify({ action }),
+        body: JSON.stringify(delta === undefined ? { action } : { action, delta }),
       });
 
       if (!response.ok) {
@@ -568,11 +647,14 @@ export default function Home() {
 
       return response.json() as Promise<TaskDetailResponse>;
     },
-    onMutate: async ({ taskId, action }) => {
+    onMutate: async ({ taskId, action, delta, skipOptimistic }) => {
       setMutationError(null);
       await queryClient.cancelQueries({ queryKey: ["tasks"] });
       await queryClient.cancelQueries({ queryKey: ["task-detail", taskId] });
       await queryClient.cancelQueries({ queryKey: ["bootstrap"] });
+
+      const nextVersion = (taskActionVersionRef.current[taskId] ?? 0) + 1;
+      taskActionVersionRef.current[taskId] = nextVersion;
 
       const snapshots = snapshotTaskCaches(taskId);
       const bootstrapSnapshot = queryClient.getQueryData<BootstrapResponse>(["bootstrap", sessionInfo?.email]);
@@ -583,8 +665,8 @@ export default function Home() {
         snapshots.weekly?.tasks.find((task) => task.id === taskId) ??
         snapshots.season?.tasks.find((task) => task.id === taskId);
 
-      if (baseTask) {
-        const optimisticTask = applyOptimisticTaskAction(baseTask, action);
+      if (baseTask && !skipOptimistic) {
+        const optimisticTask = applyOptimisticTaskAction(baseTask, action, delta ?? 0);
         applyTaskToCaches(optimisticTask);
 
         if (action === "complete" && optimisticTask.isCompleted && bootstrapSnapshot) {
@@ -602,9 +684,18 @@ export default function Home() {
       return {
         snapshots,
         bootstrapSnapshot,
+        taskId,
+        version: nextVersion,
       };
     },
     onError: (error, _variables, context) => {
+      if (context?.taskId && context?.version !== undefined) {
+        const latestVersion = taskActionVersionRef.current[context.taskId] ?? 0;
+        if (latestVersion !== context.version) {
+          return;
+        }
+      }
+
       if (context?.snapshots) {
         restoreTaskCaches(context.snapshots);
       }
@@ -613,8 +704,13 @@ export default function Home() {
       }
       setMutationError((error as Error).message);
     },
-    onSuccess: (result, variables) => {
-      applyTaskToCaches(result.task);
+    onSuccess: (result, variables, context) => {
+      if (context?.taskId && context?.version !== undefined) {
+        const latestVersion = taskActionVersionRef.current[context.taskId] ?? 0;
+        if (latestVersion === context.version) {
+          applyTaskToCaches(result.task);
+        }
+      }
       void queryClient.invalidateQueries({ queryKey: ["tasks"] });
       void queryClient.invalidateQueries({ queryKey: ["task-detail", variables.taskId] });
       void queryClient.invalidateQueries({ queryKey: ["bootstrap"] });
@@ -715,6 +811,7 @@ export default function Home() {
       return;
     }
 
+    flushBufferedAdjust(destructiveTarget.payload.id);
     taskActionMutation.mutate(
       { taskId: destructiveTarget.payload.id, action: "reset" },
       {
@@ -868,10 +965,10 @@ export default function Home() {
                       <p className="text-sm text-zinc-700">経験値: {selectedTaskQuery.data.task.xpValue} XP</p>
                                             <p className="text-xs text-zinc-500">作成日時: {new Date(selectedTaskQuery.data.task.createdAt).toLocaleString()}</p>
                       <div className="flex flex-wrap gap-2">
-                        <Button size="sm" onClick={() => taskActionMutation.mutate({ taskId: selectedTaskQuery.data!.task.id, action: "increment" })} disabled={selectedTaskQuery.data.task.isCompleted}>
+                        <Button size="sm" onClick={() => queueBufferedAdjust(selectedTaskQuery.data!.task.id, 1)} disabled={selectedTaskQuery.data.task.isCompleted}>
                           +1
                         </Button>
-                        <Button size="sm" variant="ghost" onClick={() => taskActionMutation.mutate({ taskId: selectedTaskQuery.data!.task.id, action: "decrement" })} disabled={selectedTaskQuery.data.task.isCompleted}>
+                        <Button size="sm" variant="ghost" onClick={() => queueBufferedAdjust(selectedTaskQuery.data!.task.id, -1)} disabled={selectedTaskQuery.data.task.isCompleted}>
                           -1
                         </Button>
                         <Button
@@ -885,7 +982,10 @@ export default function Home() {
                         <Button
                           size="sm"
                           variant="secondary"
-                          onClick={() => taskActionMutation.mutate({ taskId: selectedTaskQuery.data!.task.id, action: "complete" })}
+                          onClick={() => {
+                            flushBufferedAdjust(selectedTaskQuery.data!.task.id);
+                            taskActionMutation.mutate({ taskId: selectedTaskQuery.data!.task.id, action: "complete" });
+                          }}
                           disabled={selectedTaskQuery.data.task.isCompleted || selectedTaskQuery.data.task.currentCount < selectedTaskQuery.data.task.targetCount}
                         >
                           完了

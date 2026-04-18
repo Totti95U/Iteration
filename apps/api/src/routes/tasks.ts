@@ -178,7 +178,7 @@ taskRouter.patch("/:taskId", requireAuth, async (req: AuthenticatedRequest, res)
     const userId = req.authUser!.id;
     const taskIdParam = req.params.taskId;
     const taskId = Array.isArray(taskIdParam) ? taskIdParam[0] : taskIdParam;
-    const { action } = req.body as { action?: "increment" | "decrement" | "reset" | "complete" };
+    const { action, delta } = req.body as { action?: "increment" | "decrement" | "reset" | "complete" | "adjust"; delta?: number };
 
     const task = await prisma.task.findFirst({
         where: {
@@ -218,6 +218,26 @@ taskRouter.patch("/:taskId", requireAuth, async (req: AuthenticatedRequest, res)
             where: { id: task.id },
             data: {
                 currentCount: Math.max(gameSettings.minTaskCurrentCount, task.currentCount - 1),
+            },
+        });
+        res.json({ task: updated });
+        return;
+    }
+
+    if (action === "adjust") {
+        const normalizedDelta = Number.isFinite(delta) ? Math.trunc(delta as number) : 0;
+        if (normalizedDelta === 0) {
+            res.json({ task });
+            return;
+        }
+
+        const updated = await prisma.task.update({
+            where: { id: task.id },
+            data: {
+                currentCount: Math.max(
+                    gameSettings.minTaskCurrentCount,
+                    Math.min(task.targetCount, task.currentCount + normalizedDelta),
+                ),
             },
         });
         res.json({ task: updated });
