@@ -63,6 +63,7 @@ bootstrapRouter.get("/", requireAuth, async (req: AuthenticatedRequest, res) => 
             create: {
                 userId,
                 seasonId: season.id,
+                dailyUnseen: true,
                 weeklyUnseen: true,
                 seasonUnseen: true,
             },

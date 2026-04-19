@@ -28,8 +28,10 @@ export type UserSeasonStateMinAggregateOutputType = {
   id: string | null
   userId: string | null
   seasonId: string | null
+  dailyUnseen: boolean | null
   weeklyUnseen: boolean | null
   seasonUnseen: boolean | null
+  dailySeenAt: Date | null
   weeklySeenAt: Date | null
   seasonSeenAt: Date | null
   createdAt: Date | null
@@ -40,8 +42,10 @@ export type UserSeasonStateMaxAggregateOutputType = {
   id: string | null
   userId: string | null
   seasonId: string | null
+  dailyUnseen: boolean | null
   weeklyUnseen: boolean | null
   seasonUnseen: boolean | null
+  dailySeenAt: Date | null
   weeklySeenAt: Date | null
   seasonSeenAt: Date | null
   createdAt: Date | null
@@ -52,8 +56,10 @@ export type UserSeasonStateCountAggregateOutputType = {
   id: number
   userId: number
   seasonId: number
+  dailyUnseen: number
   weeklyUnseen: number
   seasonUnseen: number
+  dailySeenAt: number
   weeklySeenAt: number
   seasonSeenAt: number
   createdAt: number
@@ -66,8 +72,10 @@ export type UserSeasonStateMinAggregateInputType = {
   id?: true
   userId?: true
   seasonId?: true
+  dailyUnseen?: true
   weeklyUnseen?: true
   seasonUnseen?: true
+  dailySeenAt?: true
   weeklySeenAt?: true
   seasonSeenAt?: true
   createdAt?: true
@@ -78,8 +86,10 @@ export type UserSeasonStateMaxAggregateInputType = {
   id?: true
   userId?: true
   seasonId?: true
+  dailyUnseen?: true
   weeklyUnseen?: true
   seasonUnseen?: true
+  dailySeenAt?: true
   weeklySeenAt?: true
   seasonSeenAt?: true
   createdAt?: true
@@ -90,8 +100,10 @@ export type UserSeasonStateCountAggregateInputType = {
   id?: true
   userId?: true
   seasonId?: true
+  dailyUnseen?: true
   weeklyUnseen?: true
   seasonUnseen?: true
+  dailySeenAt?: true
   weeklySeenAt?: true
   seasonSeenAt?: true
   createdAt?: true
@@ -175,8 +187,10 @@ export type UserSeasonStateGroupByOutputType = {
   id: string
   userId: string
   seasonId: string
+  dailyUnseen: boolean
   weeklyUnseen: boolean
   seasonUnseen: boolean
+  dailySeenAt: Date | null
   weeklySeenAt: Date | null
   seasonSeenAt: Date | null
   createdAt: Date
@@ -208,8 +222,10 @@ export type UserSeasonStateWhereInput = {
   id?: Prisma.StringFilter<"UserSeasonState"> | string
   userId?: Prisma.UuidFilter<"UserSeasonState"> | string
   seasonId?: Prisma.StringFilter<"UserSeasonState"> | string
+  dailyUnseen?: Prisma.BoolFilter<"UserSeasonState"> | boolean
   weeklyUnseen?: Prisma.BoolFilter<"UserSeasonState"> | boolean
   seasonUnseen?: Prisma.BoolFilter<"UserSeasonState"> | boolean
+  dailySeenAt?: Prisma.DateTimeNullableFilter<"UserSeasonState"> | Date | string | null
   weeklySeenAt?: Prisma.DateTimeNullableFilter<"UserSeasonState"> | Date | string | null
   seasonSeenAt?: Prisma.DateTimeNullableFilter<"UserSeasonState"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"UserSeasonState"> | Date | string
@@ -222,8 +238,10 @@ export type UserSeasonStateOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   seasonId?: Prisma.SortOrder
+  dailyUnseen?: Prisma.SortOrder
   weeklyUnseen?: Prisma.SortOrder
   seasonUnseen?: Prisma.SortOrder
+  dailySeenAt?: Prisma.SortOrderInput | Prisma.SortOrder
   weeklySeenAt?: Prisma.SortOrderInput | Prisma.SortOrder
   seasonSeenAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -240,8 +258,10 @@ export type UserSeasonStateWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.UserSeasonStateWhereInput | Prisma.UserSeasonStateWhereInput[]
   userId?: Prisma.UuidFilter<"UserSeasonState"> | string
   seasonId?: Prisma.StringFilter<"UserSeasonState"> | string
+  dailyUnseen?: Prisma.BoolFilter<"UserSeasonState"> | boolean
   weeklyUnseen?: Prisma.BoolFilter<"UserSeasonState"> | boolean
   seasonUnseen?: Prisma.BoolFilter<"UserSeasonState"> | boolean
+  dailySeenAt?: Prisma.DateTimeNullableFilter<"UserSeasonState"> | Date | string | null
   weeklySeenAt?: Prisma.DateTimeNullableFilter<"UserSeasonState"> | Date | string | null
   seasonSeenAt?: Prisma.DateTimeNullableFilter<"UserSeasonState"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"UserSeasonState"> | Date | string
@@ -254,8 +274,10 @@ export type UserSeasonStateOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   seasonId?: Prisma.SortOrder
+  dailyUnseen?: Prisma.SortOrder
   weeklyUnseen?: Prisma.SortOrder
   seasonUnseen?: Prisma.SortOrder
+  dailySeenAt?: Prisma.SortOrderInput | Prisma.SortOrder
   weeklySeenAt?: Prisma.SortOrderInput | Prisma.SortOrder
   seasonSeenAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -272,8 +294,10 @@ export type UserSeasonStateScalarWhereWithAggregatesInput = {
   id?: Prisma.StringWithAggregatesFilter<"UserSeasonState"> | string
   userId?: Prisma.UuidWithAggregatesFilter<"UserSeasonState"> | string
   seasonId?: Prisma.StringWithAggregatesFilter<"UserSeasonState"> | string
+  dailyUnseen?: Prisma.BoolWithAggregatesFilter<"UserSeasonState"> | boolean
   weeklyUnseen?: Prisma.BoolWithAggregatesFilter<"UserSeasonState"> | boolean
   seasonUnseen?: Prisma.BoolWithAggregatesFilter<"UserSeasonState"> | boolean
+  dailySeenAt?: Prisma.DateTimeNullableWithAggregatesFilter<"UserSeasonState"> | Date | string | null
   weeklySeenAt?: Prisma.DateTimeNullableWithAggregatesFilter<"UserSeasonState"> | Date | string | null
   seasonSeenAt?: Prisma.DateTimeNullableWithAggregatesFilter<"UserSeasonState"> | Date | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"UserSeasonState"> | Date | string
@@ -282,8 +306,10 @@ export type UserSeasonStateScalarWhereWithAggregatesInput = {
 
 export type UserSeasonStateCreateInput = {
   id?: string
+  dailyUnseen?: boolean
   weeklyUnseen?: boolean
   seasonUnseen?: boolean
+  dailySeenAt?: Date | string | null
   weeklySeenAt?: Date | string | null
   seasonSeenAt?: Date | string | null
   createdAt?: Date | string
@@ -296,8 +322,10 @@ export type UserSeasonStateUncheckedCreateInput = {
   id?: string
   userId: string
   seasonId: string
+  dailyUnseen?: boolean
   weeklyUnseen?: boolean
   seasonUnseen?: boolean
+  dailySeenAt?: Date | string | null
   weeklySeenAt?: Date | string | null
   seasonSeenAt?: Date | string | null
   createdAt?: Date | string
@@ -306,8 +334,10 @@ export type UserSeasonStateUncheckedCreateInput = {
 
 export type UserSeasonStateUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  dailyUnseen?: Prisma.BoolFieldUpdateOperationsInput | boolean
   weeklyUnseen?: Prisma.BoolFieldUpdateOperationsInput | boolean
   seasonUnseen?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  dailySeenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   weeklySeenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   seasonSeenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -320,8 +350,10 @@ export type UserSeasonStateUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   seasonId?: Prisma.StringFieldUpdateOperationsInput | string
+  dailyUnseen?: Prisma.BoolFieldUpdateOperationsInput | boolean
   weeklyUnseen?: Prisma.BoolFieldUpdateOperationsInput | boolean
   seasonUnseen?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  dailySeenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   weeklySeenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   seasonSeenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -332,8 +364,10 @@ export type UserSeasonStateCreateManyInput = {
   id?: string
   userId: string
   seasonId: string
+  dailyUnseen?: boolean
   weeklyUnseen?: boolean
   seasonUnseen?: boolean
+  dailySeenAt?: Date | string | null
   weeklySeenAt?: Date | string | null
   seasonSeenAt?: Date | string | null
   createdAt?: Date | string
@@ -342,8 +376,10 @@ export type UserSeasonStateCreateManyInput = {
 
 export type UserSeasonStateUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  dailyUnseen?: Prisma.BoolFieldUpdateOperationsInput | boolean
   weeklyUnseen?: Prisma.BoolFieldUpdateOperationsInput | boolean
   seasonUnseen?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  dailySeenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   weeklySeenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   seasonSeenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -354,8 +390,10 @@ export type UserSeasonStateUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   seasonId?: Prisma.StringFieldUpdateOperationsInput | string
+  dailyUnseen?: Prisma.BoolFieldUpdateOperationsInput | boolean
   weeklyUnseen?: Prisma.BoolFieldUpdateOperationsInput | boolean
   seasonUnseen?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  dailySeenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   weeklySeenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   seasonSeenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -381,8 +419,10 @@ export type UserSeasonStateCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   seasonId?: Prisma.SortOrder
+  dailyUnseen?: Prisma.SortOrder
   weeklyUnseen?: Prisma.SortOrder
   seasonUnseen?: Prisma.SortOrder
+  dailySeenAt?: Prisma.SortOrder
   weeklySeenAt?: Prisma.SortOrder
   seasonSeenAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -393,8 +433,10 @@ export type UserSeasonStateMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   seasonId?: Prisma.SortOrder
+  dailyUnseen?: Prisma.SortOrder
   weeklyUnseen?: Prisma.SortOrder
   seasonUnseen?: Prisma.SortOrder
+  dailySeenAt?: Prisma.SortOrder
   weeklySeenAt?: Prisma.SortOrder
   seasonSeenAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -405,8 +447,10 @@ export type UserSeasonStateMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   seasonId?: Prisma.SortOrder
+  dailyUnseen?: Prisma.SortOrder
   weeklyUnseen?: Prisma.SortOrder
   seasonUnseen?: Prisma.SortOrder
+  dailySeenAt?: Prisma.SortOrder
   weeklySeenAt?: Prisma.SortOrder
   seasonSeenAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -507,8 +551,10 @@ export type NullableDateTimeFieldUpdateOperationsInput = {
 
 export type UserSeasonStateCreateWithoutUserInput = {
   id?: string
+  dailyUnseen?: boolean
   weeklyUnseen?: boolean
   seasonUnseen?: boolean
+  dailySeenAt?: Date | string | null
   weeklySeenAt?: Date | string | null
   seasonSeenAt?: Date | string | null
   createdAt?: Date | string
@@ -519,8 +565,10 @@ export type UserSeasonStateCreateWithoutUserInput = {
 export type UserSeasonStateUncheckedCreateWithoutUserInput = {
   id?: string
   seasonId: string
+  dailyUnseen?: boolean
   weeklyUnseen?: boolean
   seasonUnseen?: boolean
+  dailySeenAt?: Date | string | null
   weeklySeenAt?: Date | string | null
   seasonSeenAt?: Date | string | null
   createdAt?: Date | string
@@ -560,8 +608,10 @@ export type UserSeasonStateScalarWhereInput = {
   id?: Prisma.StringFilter<"UserSeasonState"> | string
   userId?: Prisma.UuidFilter<"UserSeasonState"> | string
   seasonId?: Prisma.StringFilter<"UserSeasonState"> | string
+  dailyUnseen?: Prisma.BoolFilter<"UserSeasonState"> | boolean
   weeklyUnseen?: Prisma.BoolFilter<"UserSeasonState"> | boolean
   seasonUnseen?: Prisma.BoolFilter<"UserSeasonState"> | boolean
+  dailySeenAt?: Prisma.DateTimeNullableFilter<"UserSeasonState"> | Date | string | null
   weeklySeenAt?: Prisma.DateTimeNullableFilter<"UserSeasonState"> | Date | string | null
   seasonSeenAt?: Prisma.DateTimeNullableFilter<"UserSeasonState"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"UserSeasonState"> | Date | string
@@ -570,8 +620,10 @@ export type UserSeasonStateScalarWhereInput = {
 
 export type UserSeasonStateCreateWithoutSeasonInput = {
   id?: string
+  dailyUnseen?: boolean
   weeklyUnseen?: boolean
   seasonUnseen?: boolean
+  dailySeenAt?: Date | string | null
   weeklySeenAt?: Date | string | null
   seasonSeenAt?: Date | string | null
   createdAt?: Date | string
@@ -582,8 +634,10 @@ export type UserSeasonStateCreateWithoutSeasonInput = {
 export type UserSeasonStateUncheckedCreateWithoutSeasonInput = {
   id?: string
   userId: string
+  dailyUnseen?: boolean
   weeklyUnseen?: boolean
   seasonUnseen?: boolean
+  dailySeenAt?: Date | string | null
   weeklySeenAt?: Date | string | null
   seasonSeenAt?: Date | string | null
   createdAt?: Date | string
@@ -619,8 +673,10 @@ export type UserSeasonStateUpdateManyWithWhereWithoutSeasonInput = {
 export type UserSeasonStateCreateManyUserInput = {
   id?: string
   seasonId: string
+  dailyUnseen?: boolean
   weeklyUnseen?: boolean
   seasonUnseen?: boolean
+  dailySeenAt?: Date | string | null
   weeklySeenAt?: Date | string | null
   seasonSeenAt?: Date | string | null
   createdAt?: Date | string
@@ -629,8 +685,10 @@ export type UserSeasonStateCreateManyUserInput = {
 
 export type UserSeasonStateUpdateWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  dailyUnseen?: Prisma.BoolFieldUpdateOperationsInput | boolean
   weeklyUnseen?: Prisma.BoolFieldUpdateOperationsInput | boolean
   seasonUnseen?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  dailySeenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   weeklySeenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   seasonSeenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -641,8 +699,10 @@ export type UserSeasonStateUpdateWithoutUserInput = {
 export type UserSeasonStateUncheckedUpdateWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   seasonId?: Prisma.StringFieldUpdateOperationsInput | string
+  dailyUnseen?: Prisma.BoolFieldUpdateOperationsInput | boolean
   weeklyUnseen?: Prisma.BoolFieldUpdateOperationsInput | boolean
   seasonUnseen?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  dailySeenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   weeklySeenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   seasonSeenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -652,8 +712,10 @@ export type UserSeasonStateUncheckedUpdateWithoutUserInput = {
 export type UserSeasonStateUncheckedUpdateManyWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   seasonId?: Prisma.StringFieldUpdateOperationsInput | string
+  dailyUnseen?: Prisma.BoolFieldUpdateOperationsInput | boolean
   weeklyUnseen?: Prisma.BoolFieldUpdateOperationsInput | boolean
   seasonUnseen?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  dailySeenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   weeklySeenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   seasonSeenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -663,8 +725,10 @@ export type UserSeasonStateUncheckedUpdateManyWithoutUserInput = {
 export type UserSeasonStateCreateManySeasonInput = {
   id?: string
   userId: string
+  dailyUnseen?: boolean
   weeklyUnseen?: boolean
   seasonUnseen?: boolean
+  dailySeenAt?: Date | string | null
   weeklySeenAt?: Date | string | null
   seasonSeenAt?: Date | string | null
   createdAt?: Date | string
@@ -673,8 +737,10 @@ export type UserSeasonStateCreateManySeasonInput = {
 
 export type UserSeasonStateUpdateWithoutSeasonInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  dailyUnseen?: Prisma.BoolFieldUpdateOperationsInput | boolean
   weeklyUnseen?: Prisma.BoolFieldUpdateOperationsInput | boolean
   seasonUnseen?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  dailySeenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   weeklySeenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   seasonSeenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -685,8 +751,10 @@ export type UserSeasonStateUpdateWithoutSeasonInput = {
 export type UserSeasonStateUncheckedUpdateWithoutSeasonInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
+  dailyUnseen?: Prisma.BoolFieldUpdateOperationsInput | boolean
   weeklyUnseen?: Prisma.BoolFieldUpdateOperationsInput | boolean
   seasonUnseen?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  dailySeenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   weeklySeenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   seasonSeenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -696,8 +764,10 @@ export type UserSeasonStateUncheckedUpdateWithoutSeasonInput = {
 export type UserSeasonStateUncheckedUpdateManyWithoutSeasonInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
+  dailyUnseen?: Prisma.BoolFieldUpdateOperationsInput | boolean
   weeklyUnseen?: Prisma.BoolFieldUpdateOperationsInput | boolean
   seasonUnseen?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  dailySeenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   weeklySeenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   seasonSeenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -710,8 +780,10 @@ export type UserSeasonStateSelect<ExtArgs extends runtime.Types.Extensions.Inter
   id?: boolean
   userId?: boolean
   seasonId?: boolean
+  dailyUnseen?: boolean
   weeklyUnseen?: boolean
   seasonUnseen?: boolean
+  dailySeenAt?: boolean
   weeklySeenAt?: boolean
   seasonSeenAt?: boolean
   createdAt?: boolean
@@ -724,8 +796,10 @@ export type UserSeasonStateSelectCreateManyAndReturn<ExtArgs extends runtime.Typ
   id?: boolean
   userId?: boolean
   seasonId?: boolean
+  dailyUnseen?: boolean
   weeklyUnseen?: boolean
   seasonUnseen?: boolean
+  dailySeenAt?: boolean
   weeklySeenAt?: boolean
   seasonSeenAt?: boolean
   createdAt?: boolean
@@ -738,8 +812,10 @@ export type UserSeasonStateSelectUpdateManyAndReturn<ExtArgs extends runtime.Typ
   id?: boolean
   userId?: boolean
   seasonId?: boolean
+  dailyUnseen?: boolean
   weeklyUnseen?: boolean
   seasonUnseen?: boolean
+  dailySeenAt?: boolean
   weeklySeenAt?: boolean
   seasonSeenAt?: boolean
   createdAt?: boolean
@@ -752,15 +828,17 @@ export type UserSeasonStateSelectScalar = {
   id?: boolean
   userId?: boolean
   seasonId?: boolean
+  dailyUnseen?: boolean
   weeklyUnseen?: boolean
   seasonUnseen?: boolean
+  dailySeenAt?: boolean
   weeklySeenAt?: boolean
   seasonSeenAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type UserSeasonStateOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "seasonId" | "weeklyUnseen" | "seasonUnseen" | "weeklySeenAt" | "seasonSeenAt" | "createdAt" | "updatedAt", ExtArgs["result"]["userSeasonState"]>
+export type UserSeasonStateOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "seasonId" | "dailyUnseen" | "weeklyUnseen" | "seasonUnseen" | "dailySeenAt" | "weeklySeenAt" | "seasonSeenAt" | "createdAt" | "updatedAt", ExtArgs["result"]["userSeasonState"]>
 export type UserSeasonStateInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserProfileDefaultArgs<ExtArgs>
   season?: boolean | Prisma.SeasonDefaultArgs<ExtArgs>
@@ -784,8 +862,10 @@ export type $UserSeasonStatePayload<ExtArgs extends runtime.Types.Extensions.Int
     id: string
     userId: string
     seasonId: string
+    dailyUnseen: boolean
     weeklyUnseen: boolean
     seasonUnseen: boolean
+    dailySeenAt: Date | null
     weeklySeenAt: Date | null
     seasonSeenAt: Date | null
     createdAt: Date
@@ -1218,8 +1298,10 @@ export interface UserSeasonStateFieldRefs {
   readonly id: Prisma.FieldRef<"UserSeasonState", 'String'>
   readonly userId: Prisma.FieldRef<"UserSeasonState", 'String'>
   readonly seasonId: Prisma.FieldRef<"UserSeasonState", 'String'>
+  readonly dailyUnseen: Prisma.FieldRef<"UserSeasonState", 'Boolean'>
   readonly weeklyUnseen: Prisma.FieldRef<"UserSeasonState", 'Boolean'>
   readonly seasonUnseen: Prisma.FieldRef<"UserSeasonState", 'Boolean'>
+  readonly dailySeenAt: Prisma.FieldRef<"UserSeasonState", 'DateTime'>
   readonly weeklySeenAt: Prisma.FieldRef<"UserSeasonState", 'DateTime'>
   readonly seasonSeenAt: Prisma.FieldRef<"UserSeasonState", 'DateTime'>
   readonly createdAt: Prisma.FieldRef<"UserSeasonState", 'DateTime'>

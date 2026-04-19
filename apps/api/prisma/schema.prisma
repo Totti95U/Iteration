@@ -51,8 +51,10 @@ model UserSeasonState {
     id           String    @id @default(cuid())
     userId       String    @db.Uuid
     seasonId     String
+    dailyUnseen  Boolean   @default(true)
     weeklyUnseen Boolean   @default(true)
     seasonUnseen Boolean   @default(true)
+    dailySeenAt  DateTime?
     weeklySeenAt DateTime?
     seasonSeenAt DateTime?
     createdAt    DateTime  @default(now())

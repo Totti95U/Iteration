@@ -11,6 +11,7 @@ import { useUiStore } from "@/store/ui-store";
 
 type TaskType = "DAILY" | "WEEKLY" | "SEASON";
 type TaskActionType = "increment" | "decrement" | "reset" | "complete" | "adjust";
+type ServerSeenTab = "DAILY" | "WEEKLY" | "SEASON";
 
 type SessionInfo = {
   accessToken: string;
@@ -44,6 +45,17 @@ type BootstrapResponse = {
     seasonXp: number;
     seasonLevel: number;
   };
+  seasonState: {
+    id: string;
+    userId: string;
+    seasonId: string;
+    dailyUnseen: boolean;
+    weeklyUnseen: boolean;
+    seasonUnseen: boolean;
+    dailySeenAt: string | null;
+    weeklySeenAt: string | null;
+    seasonSeenAt: string | null;
+  };
   xpOptions: Array<{
     id: string;
     type: TaskType;
@@ -54,6 +66,7 @@ type BootstrapResponse = {
 
 type TasksResponse = { tasks: Task[] };
 type TaskDetailResponse = { task: Task };
+type SeasonStateResponse = { seasonState: BootstrapResponse["seasonState"] };
 
 type CachedTaskSnapshots = {
   daily: TasksResponse | undefined;
@@ -633,6 +646,40 @@ export default function Home() {
     },
   });
 
+  const seenStateMutation = useMutation({
+    mutationFn: async ({ seasonId, tab }: { seasonId: string; tab: ServerSeenTab }): Promise<SeasonStateResponse> => {
+      const response = await fetch(`${apiBaseUrl}/api/me/season-state/seen`, {
+        method: "PATCH",
+        headers: authHeaders,
+        body: JSON.stringify({ seasonId, tab }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update seen state");
+      }
+
+      return response.json() as Promise<SeasonStateResponse>;
+    },
+    onMutate: () => {
+      setMutationError(null);
+    },
+    onSuccess: (result) => {
+      queryClient.setQueryData<BootstrapResponse>(["bootstrap", sessionInfo?.email], (prev) => {
+        if (!prev) {
+          return prev;
+        }
+
+        return {
+          ...prev,
+          seasonState: result.seasonState,
+        };
+      });
+    },
+    onError: (error) => {
+      setMutationError((error as Error).message);
+    },
+  });
+
   const taskActionMutation = useMutation({
     mutationFn: async ({ taskId, action, delta }: { taskId: string; action: TaskActionType; delta?: number; skipOptimistic?: boolean }): Promise<TaskDetailResponse> => {
       const response = await fetch(`${apiBaseUrl}/api/tasks/${taskId}`, {
@@ -834,6 +881,44 @@ export default function Home() {
     });
   }
 
+  function isTabUnseen(tab: TaskType): boolean {
+    if (!bootstrapQuery.data) {
+      return false;
+    }
+
+    if (tab === "DAILY") {
+      return bootstrapQuery.data.seasonState.dailyUnseen;
+    }
+
+    return tab === "WEEKLY" ? bootstrapQuery.data.seasonState.weeklyUnseen : bootstrapQuery.data.seasonState.seasonUnseen;
+  }
+
+  useEffect(() => {
+    if (!bootstrapQuery.data) {
+      return;
+    }
+
+    const isUnseen =
+      activeTab === "DAILY"
+        ? bootstrapQuery.data.seasonState.dailyUnseen
+        : activeTab === "WEEKLY"
+          ? bootstrapQuery.data.seasonState.weeklyUnseen
+          : bootstrapQuery.data.seasonState.seasonUnseen;
+
+    if (!isUnseen || seenStateMutation.isPending) {
+      return;
+    }
+
+    seenStateMutation.mutate({
+      seasonId: bootstrapQuery.data.season.id,
+      tab: activeTab,
+    });
+  }, [
+    activeTab,
+    bootstrapQuery.data,
+    seenStateMutation,
+  ]);
+
   const isDestructivePending = deleteTaskMutation.isPending || taskActionMutation.isPending;
 
   const dialogTitle =
@@ -872,7 +957,7 @@ export default function Home() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-4xl flex-col gap-6 p-6">
+    <main className="mx-auto flex min-h-screen w-full max-w-4xl flex-col gap-4 p-4 sm:gap-6 sm:p-6">
       <header className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -915,18 +1000,22 @@ export default function Home() {
             </div>
 
             <div className="space-y-3">
-              <div className="flex gap-2">
+              <div className="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap">
                 {(["DAILY", "WEEKLY", "SEASON"] as const).map((tab: TaskType) => (
                   <Button
                     key={tab}
                     variant={activeTab === tab ? "primary" : "secondary"}
                     size="sm"
+                    className="w-full"
                     onClick={() => {
                       setActiveTab(tab);
                       setCreateForm((prev) => ({ ...prev, type: tab }));
                     }}
                   >
-                    {tab}
+                    <span className="inline-flex items-center gap-1">
+                      {tab}
+                      {isTabUnseen(tab) && <span className="rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold text-white">未確認</span>}
+                    </span>
                   </Button>
                 ))}
               </div>
@@ -940,11 +1029,11 @@ export default function Home() {
                     {tasksQuery.data?.tasks.map((task) => (
                       <li key={task.id}>
                         <button
-                          className={`w-full rounded-md border p-3 text-left transition ${task.id === selectedTaskId ? "border-zinc-900 bg-zinc-50" : "border-zinc-200 bg-white"} ${task.isCompleted ? "opacity-55" : "opacity-100"}`}
+                          className={`w-full rounded-md border p-3 text-left transition active:scale-[0.99] ${task.id === selectedTaskId ? "border-zinc-900 bg-zinc-50" : "border-zinc-200 bg-white"} ${task.isCompleted ? "opacity-55" : "opacity-100"}`}
                           onClick={() => setSelectedTaskId(task.id)}
                         >
-                          <p className="text-sm font-semibold text-zinc-900">{task.title}</p>
-                          <p className="text-xs text-zinc-600">
+                          <p className="text-sm font-semibold leading-5 text-zinc-900">{task.title}</p>
+                          <p className="mt-1 text-xs text-zinc-600">
                             {task.currentCount}/{task.targetCount} • {task.xpValue} XP
                           </p>
                         </button>
@@ -963,15 +1052,16 @@ export default function Home() {
                       <p className="text-sm text-zinc-600">{selectedTaskQuery.data.task.description ?? "説明なし"}</p>
                       <p className="text-sm text-zinc-700">進捗: {selectedTaskQuery.data.task.currentCount}/{selectedTaskQuery.data.task.targetCount}</p>
                       <p className="text-sm text-zinc-700">経験値: {selectedTaskQuery.data.task.xpValue} XP</p>
-                                            <p className="text-xs text-zinc-500">作成日時: {new Date(selectedTaskQuery.data.task.createdAt).toLocaleString()}</p>
-                      <div className="flex flex-wrap gap-2">
-                        <Button size="sm" onClick={() => queueBufferedAdjust(selectedTaskQuery.data!.task.id, 1)} disabled={selectedTaskQuery.data.task.isCompleted}>
+                      <p className="text-xs text-zinc-500">作成日時: {new Date(selectedTaskQuery.data.task.createdAt).toLocaleString()}</p>
+                      <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+                        <Button className="w-full sm:w-auto" size="sm" onClick={() => queueBufferedAdjust(selectedTaskQuery.data!.task.id, 1)} disabled={selectedTaskQuery.data.task.isCompleted}>
                           +1
                         </Button>
-                        <Button size="sm" variant="ghost" onClick={() => queueBufferedAdjust(selectedTaskQuery.data!.task.id, -1)} disabled={selectedTaskQuery.data.task.isCompleted}>
+                        <Button className="w-full sm:w-auto" size="sm" variant="ghost" onClick={() => queueBufferedAdjust(selectedTaskQuery.data!.task.id, -1)} disabled={selectedTaskQuery.data.task.isCompleted}>
                           -1
                         </Button>
                         <Button
+                          className="w-full sm:w-auto"
                           size="sm"
                           variant="danger"
                           onClick={() => handleResetProgress(selectedTaskQuery.data!.task)}
@@ -980,6 +1070,7 @@ export default function Home() {
                           進捗リセット
                         </Button>
                         <Button
+                          className="w-full sm:w-auto"
                           size="sm"
                           variant="secondary"
                           onClick={() => {
@@ -990,10 +1081,11 @@ export default function Home() {
                         >
                           完了
                         </Button>
-                        <Button size="sm" variant="secondary" onClick={() => openEdit(selectedTaskQuery.data!.task)}>
+                        <Button className="w-full sm:w-auto" size="sm" variant="secondary" onClick={() => openEdit(selectedTaskQuery.data!.task)}>
                           編集
                         </Button>
                         <Button
+                          className="w-full sm:w-auto"
                           size="sm"
                           variant="secondary"
                           onClick={() => {
@@ -1005,6 +1097,7 @@ export default function Home() {
                           複製して新規作成
                         </Button>
                         <Button
+                          className="w-full sm:w-auto"
                           size="sm"
                           variant="danger"
                           onClick={() => handleDeleteTask(selectedTaskQuery.data!.task.id, selectedTaskQuery.data!.task.title)}
@@ -1020,11 +1113,12 @@ export default function Home() {
 
               <div className="rounded-lg border border-zinc-200 p-4">
                 <p className="text-sm font-semibold text-zinc-700">タスク作成</p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <Button size="sm" variant={createMode === "new" ? "primary" : "secondary"} onClick={() => setCreateMode("new")}>
+                <div className="mt-3 grid grid-cols-3 gap-2 sm:flex sm:flex-wrap">
+                  <Button className="w-full sm:w-auto" size="sm" variant={createMode === "new" ? "primary" : "secondary"} onClick={() => setCreateMode("new")}>
                     新規
                   </Button>
                   <Button
+                    className="w-full sm:w-auto"
                     size="sm"
                     variant={createMode === "template" ? "primary" : "secondary"}
                     onClick={() => {
@@ -1035,7 +1129,7 @@ export default function Home() {
                   >
                     テンプレート
                   </Button>
-                  <Button size="sm" variant={createMode === "duplicate" ? "primary" : "secondary"} onClick={() => setCreateMode("duplicate")}>
+                  <Button className="w-full sm:w-auto" size="sm" variant={createMode === "duplicate" ? "primary" : "secondary"} onClick={() => setCreateMode("duplicate")}>
                     既存タスク流用
                   </Button>
                 </div>
