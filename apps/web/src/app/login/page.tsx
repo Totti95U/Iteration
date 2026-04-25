@@ -1,11 +1,28 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useMemo, useRef, useState } from "react";
+import { Suspense, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
+    return (
+        <Suspense
+            fallback={
+                <main className="mx-auto flex min-h-screen w-full max-w-xl flex-col justify-center p-6">
+                    <div className="rounded-xl border border-zinc-200 bg-white p-8 shadow-sm">
+                        <h1 className="text-2xl font-bold text-zinc-900">ログイン</h1>
+                        <p className="mt-2 text-sm text-zinc-600">読み込み中です...</p>
+                    </div>
+                </main>
+            }
+        >
+            <LoginPageContent />
+        </Suspense>
+    );
+}
+
+function LoginPageContent() {
     const [isSigningIn, setIsSigningIn] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const signInLockRef = useRef(false);

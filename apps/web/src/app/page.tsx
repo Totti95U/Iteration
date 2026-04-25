@@ -1100,13 +1100,13 @@ export default function Home() {
 
         {bootstrapQuery.data && (
           <div className="space-y-6">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="rounded-lg border border-zinc-200 p-4">
+            <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
+              <div className="rounded-lg border border-zinc-200 p-4 sm:p-4">
                 <p className="text-sm text-zinc-500">通算レベル</p>
                 <p className="text-2xl font-bold text-zinc-900">Lv {bootstrapQuery.data.progress.totalLevel}</p>
                 <p className="text-sm text-zinc-600">XP: {bootstrapQuery.data.progress.totalXp}</p>
               </div>
-              <div className="rounded-lg border border-zinc-200 p-4">
+              <div className="rounded-lg border border-zinc-200 p-4 sm:p-4">
                 <p className="text-sm text-zinc-500">シーズンレベル</p>
                 <p className="text-2xl font-bold text-zinc-900">Lv {bootstrapQuery.data.progress.seasonLevel}</p>
                 <p className="text-sm text-zinc-600">XP: {bootstrapQuery.data.progress.seasonXp}</p>
@@ -1145,8 +1145,8 @@ export default function Home() {
                 </div>
               )}
 
-              <div className="grid gap-4 lg:grid-cols-5">
-                <div className="rounded-lg border border-zinc-200 p-4 lg:col-span-2">
+              <div className="grid gap-3 sm:gap-4 lg:grid-cols-5">
+                <div className="rounded-lg border border-zinc-200 p-3.5 sm:p-4 lg:col-span-2">
                   <p className="text-sm font-semibold text-zinc-700">{activeTab} のタスク一覧</p>
                   {tasksQuery.isLoading && <p className="mt-3 text-sm text-zinc-500">読み込み中...</p>}
                   {tasksQuery.data?.tasks.length === 0 && <p className="mt-3 text-sm text-zinc-500">タスクがまだありません。</p>}
@@ -1154,7 +1154,7 @@ export default function Home() {
                     {tasksQuery.data?.tasks.map((task) => (
                       <li key={task.id}>
                         <button
-                          className={`w-full rounded-md border p-3 text-left transition active:scale-[0.99] ${task.id === selectedTaskId ? "border-zinc-900 bg-zinc-50" : "border-zinc-200 bg-white"} ${task.isCompleted ? "opacity-55" : "opacity-100"}`}
+                          className={`w-full rounded-md border p-3.5 text-left transition active:scale-[0.99] ${task.id === selectedTaskId ? "border-zinc-900 bg-zinc-50" : "border-zinc-200 bg-white"} ${task.isCompleted ? "opacity-55" : "opacity-100"}`}
                           onClick={() => setSelectedTaskId(task.id)}
                         >
                           <p className="text-sm font-semibold leading-5 text-zinc-900">{task.title}</p>
@@ -1167,7 +1167,7 @@ export default function Home() {
                   </ul>
                 </div>
 
-                <div className="rounded-lg border border-zinc-200 p-4 lg:col-span-3">
+                <div className="rounded-lg border border-zinc-200 p-3.5 sm:p-4 lg:col-span-3">
                   <p className="text-sm font-semibold text-zinc-700">タスク詳細</p>
                   {!selectedTaskId && <p className="mt-3 text-sm text-zinc-500">左の一覧からタスクを選択してください。</p>}
                   {selectedTaskQuery.isLoading && <p className="mt-3 text-sm text-zinc-500">詳細を読み込み中...</p>}
@@ -1178,7 +1178,7 @@ export default function Home() {
                       <p className="text-sm text-zinc-700">進捗: {selectedTaskQuery.data.task.currentCount}/{selectedTaskQuery.data.task.targetCount}</p>
                       <p className="text-sm text-zinc-700">経験値: {selectedTaskQuery.data.task.xpValue} XP</p>
                       <p className="text-xs text-zinc-500">作成日時: {new Date(selectedTaskQuery.data.task.createdAt).toLocaleString()}</p>
-                      <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+                      <div className="grid grid-cols-2 gap-2.5 sm:flex sm:flex-wrap">
                         <Button className="w-full sm:w-auto" size="sm" onClick={() => queueBufferedAdjust(selectedTaskQuery.data!.task.id, 1)} disabled={selectedTaskQuery.data.task.isCompleted}>
                           +1
                         </Button>
@@ -1236,9 +1236,9 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="rounded-lg border border-zinc-200 p-4">
+              <div className="rounded-lg border border-zinc-200 p-3.5 sm:p-4">
                 <p className="text-sm font-semibold text-zinc-700">タスク作成</p>
-                <div className="mt-3 grid grid-cols-3 gap-2 sm:flex sm:flex-wrap">
+                <div className="mt-3 grid grid-cols-3 gap-2.5 sm:flex sm:flex-wrap">
                   <Button className="w-full sm:w-auto" size="sm" variant={createMode === "new" ? "primary" : "secondary"} onClick={() => setCreateMode("new")}>
                     新規
                   </Button>
@@ -1264,7 +1264,7 @@ export default function Home() {
                   <div className="mt-3 space-y-2">
                     <label className="text-xs text-zinc-600">テンプレート選択</label>
                     <select
-                      className="w-full rounded-md border border-zinc-300 bg-white p-2 text-sm"
+                      className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2.5 text-base sm:text-sm"
                       value={selectedTemplateIndex}
                       onChange={(event) => {
                         const index = Number(event.target.value);
@@ -1285,7 +1285,7 @@ export default function Home() {
                   <div className="mt-3 space-y-2">
                     <label className="text-xs text-zinc-600">流用元タスク</label>
                     <select
-                      className="w-full rounded-md border border-zinc-300 bg-white p-2 text-sm"
+                      className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2.5 text-base sm:text-sm"
                       value={duplicateSourceId}
                       onChange={(event) => {
                         const value = event.target.value;
@@ -1306,15 +1306,15 @@ export default function Home() {
                 <div className="mt-3 grid gap-3 md:grid-cols-2">
                   <label className="text-xs text-zinc-600 md:col-span-2">
                     タイトル
-                    <input className="mt-1 w-full rounded-md border border-zinc-300 p-2 text-sm" value={createForm.title} onChange={(event) => setCreateForm((prev) => ({ ...prev, title: event.target.value }))} />
+                    <input className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2.5 text-base sm:text-sm" value={createForm.title} onChange={(event) => setCreateForm((prev) => ({ ...prev, title: event.target.value }))} />
                   </label>
                   <label className="text-xs text-zinc-600 md:col-span-2">
                     説明
-                    <textarea className="mt-1 w-full rounded-md border border-zinc-300 p-2 text-sm" value={createForm.description} onChange={(event) => setCreateForm((prev) => ({ ...prev, description: event.target.value }))} />
+                    <textarea className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2.5 text-base sm:text-sm" value={createForm.description} onChange={(event) => setCreateForm((prev) => ({ ...prev, description: event.target.value }))} />
                   </label>
                   <label className="text-xs text-zinc-600">
                     種類
-                    <select className="mt-1 w-full rounded-md border border-zinc-300 bg-white p-2 text-sm" value={createForm.type} onChange={(event) => setCreateForm((prev) => ({ ...prev, type: event.target.value as TaskType }))}>
+                    <select className="mt-1 w-full rounded-md border border-zinc-300 bg-white px-3 py-2.5 text-base sm:text-sm" value={createForm.type} onChange={(event) => setCreateForm((prev) => ({ ...prev, type: event.target.value as TaskType }))}>
                       <option value="DAILY">DAILY</option>
                       <option value="WEEKLY">WEEKLY</option>
                       <option value="SEASON">SEASON</option>
@@ -1322,11 +1322,11 @@ export default function Home() {
                   </label>
                   <label className="text-xs text-zinc-600">
                     目標回数
-                    <input type="number" min={1} className="mt-1 w-full rounded-md border border-zinc-300 p-2 text-sm" value={createForm.targetCount} onChange={(event) => setCreateForm((prev) => ({ ...prev, targetCount: Number(event.target.value) }))} />
+                    <input type="number" min={1} className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2.5 text-base sm:text-sm" value={createForm.targetCount} onChange={(event) => setCreateForm((prev) => ({ ...prev, targetCount: Number(event.target.value) }))} />
                   </label>
                   <label className="text-xs text-zinc-600">
                     経験値候補
-                    <select className="mt-1 w-full rounded-md border border-zinc-300 bg-white p-2 text-sm" value={resolvedCreateXpValue} onChange={(event) => setCreateForm((prev) => ({ ...prev, xpValue: Number(event.target.value) }))}>
+                    <select className="mt-1 w-full rounded-md border border-zinc-300 bg-white px-3 py-2.5 text-base sm:text-sm" value={resolvedCreateXpValue} onChange={(event) => setCreateForm((prev) => ({ ...prev, xpValue: Number(event.target.value) }))}>
                       {activeOptions.map((option) => (
                         <option key={option.id} value={option.value}>
                           {option.label} ({option.value} XP)
@@ -1336,7 +1336,7 @@ export default function Home() {
                   </label>
                   <label className="text-xs text-zinc-600">
                     報酬メモ
-                    <input className="mt-1 w-full rounded-md border border-zinc-300 p-2 text-sm" value={createForm.rewardHint} onChange={(event) => setCreateForm((prev) => ({ ...prev, rewardHint: event.target.value }))} />
+                    <input className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2.5 text-base sm:text-sm" value={createForm.rewardHint} onChange={(event) => setCreateForm((prev) => ({ ...prev, rewardHint: event.target.value }))} />
                   </label>
                 </div>
 
@@ -1348,21 +1348,21 @@ export default function Home() {
               </div>
 
               {editTaskId && (
-                <div className="rounded-lg border border-zinc-200 p-4">
+                <div className="rounded-lg border border-zinc-200 p-3.5 sm:p-4">
                   <p className="text-sm font-semibold text-zinc-700">タスク編集</p>
                   <p className="mt-1 text-xs text-zinc-500">編集対象ID: {editTaskId}</p>
                   <div className="mt-3 grid gap-3 md:grid-cols-2">
                     <label className="text-xs text-zinc-600 md:col-span-2">
                       タイトル
-                      <input className="mt-1 w-full rounded-md border border-zinc-300 p-2 text-sm" value={editForm.title} onChange={(event) => setEditForm((prev) => ({ ...prev, title: event.target.value }))} />
+                      <input className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2.5 text-base sm:text-sm" value={editForm.title} onChange={(event) => setEditForm((prev) => ({ ...prev, title: event.target.value }))} />
                     </label>
                     <label className="text-xs text-zinc-600 md:col-span-2">
                       説明
-                      <textarea className="mt-1 w-full rounded-md border border-zinc-300 p-2 text-sm" value={editForm.description} onChange={(event) => setEditForm((prev) => ({ ...prev, description: event.target.value }))} />
+                      <textarea className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2.5 text-base sm:text-sm" value={editForm.description} onChange={(event) => setEditForm((prev) => ({ ...prev, description: event.target.value }))} />
                     </label>
                     <label className="text-xs text-zinc-600">
                       種類
-                      <select className="mt-1 w-full rounded-md border border-zinc-300 bg-white p-2 text-sm" value={editForm.type} onChange={(event) => setEditForm((prev) => ({ ...prev, type: event.target.value as TaskType }))}>
+                      <select className="mt-1 w-full rounded-md border border-zinc-300 bg-white px-3 py-2.5 text-base sm:text-sm" value={editForm.type} onChange={(event) => setEditForm((prev) => ({ ...prev, type: event.target.value as TaskType }))}>
                         <option value="DAILY">DAILY</option>
                         <option value="WEEKLY">WEEKLY</option>
                         <option value="SEASON">SEASON</option>
@@ -1370,15 +1370,15 @@ export default function Home() {
                     </label>
                     <label className="text-xs text-zinc-600">
                       目標回数
-                      <input type="number" min={1} className="mt-1 w-full rounded-md border border-zinc-300 p-2 text-sm" value={editForm.targetCount} onChange={(event) => setEditForm((prev) => ({ ...prev, targetCount: Number(event.target.value) }))} />
+                      <input type="number" min={1} className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2.5 text-base sm:text-sm" value={editForm.targetCount} onChange={(event) => setEditForm((prev) => ({ ...prev, targetCount: Number(event.target.value) }))} />
                     </label>
                     <label className="text-xs text-zinc-600">
                       経験値
-                      <input type="number" min={1} className="mt-1 w-full rounded-md border border-zinc-300 p-2 text-sm" value={editForm.xpValue} onChange={(event) => setEditForm((prev) => ({ ...prev, xpValue: Number(event.target.value) }))} />
+                      <input type="number" min={1} className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2.5 text-base sm:text-sm" value={editForm.xpValue} onChange={(event) => setEditForm((prev) => ({ ...prev, xpValue: Number(event.target.value) }))} />
                     </label>
                     <label className="text-xs text-zinc-600">
                       報酬メモ
-                      <input className="mt-1 w-full rounded-md border border-zinc-300 p-2 text-sm" value={editForm.rewardHint} onChange={(event) => setEditForm((prev) => ({ ...prev, rewardHint: event.target.value }))} />
+                      <input className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2.5 text-base sm:text-sm" value={editForm.rewardHint} onChange={(event) => setEditForm((prev) => ({ ...prev, rewardHint: event.target.value }))} />
                     </label>
                   </div>
                   <div className="mt-4 flex gap-2">
