@@ -948,7 +948,7 @@ export default function Home() {
         <div className="rounded-xl border border-zinc-200 bg-white p-8 shadow-sm">
           <h1 className="text-3xl font-bold text-zinc-900">Habit Battle Pass</h1>
           <p className="mt-2 text-zinc-600">習慣をゲーム化して、デイリー・ウィークリー・シーズンの目標を進めます。</p>
-          <Link href="/login" className="mt-6 inline-flex">
+          <Link href="/login" prefetch={false} className="mt-6 inline-flex">
             <Button>ログインして開始</Button>
           </Link>
         </div>
