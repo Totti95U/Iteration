@@ -166,6 +166,11 @@ const taskTemplates: Record<TaskType, Array<Omit<TaskFormState, "type"> & { name
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000";
 const adjustFlushDelayMs = 200;
+const dailyResetHourUtc = 0;
+const dailyResetMinuteUtc = 0;
+const dailyResetSecondUtc = 0;
+const dailyResetMillisecondUtc = 0;
+const weeklyResetWeekdayUtc = 1;
 
 function emptyTaskForm(type: TaskType, xpValue = 10): TaskFormState {
   return {
@@ -192,6 +197,7 @@ export default function Home() {
   const [editForm, setEditForm] = useState<TaskFormState>(() => emptyTaskForm("DAILY"));
   const [destructiveTarget, setDestructiveTarget] = useState<DestructiveTarget | null>(null);
   const [mutationError, setMutationError] = useState<string | null>(null);
+  const [nowForCountdown, setNowForCountdown] = useState<number>(() => Date.now());
   const taskActionVersionRef = useRef<Record<string, number>>({});
   const bufferedAdjustDeltaRef = useRef<Record<string, number>>({});
   const bufferedAdjustTimerRef = useRef<Record<string, ReturnType<typeof setTimeout> | undefined>>({});
@@ -392,6 +398,16 @@ export default function Home() {
           clearTimeout(timer);
         }
       }
+    };
+  }, []);
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      setNowForCountdown(Date.now());
+    }, 60_000);
+
+    return () => {
+      clearInterval(intervalId);
     };
   }, []);
 
@@ -893,6 +909,107 @@ export default function Home() {
     return tab === "WEEKLY" ? bootstrapQuery.data.seasonState.weeklyUnseen : bootstrapQuery.data.seasonState.seasonUnseen;
   }
 
+  function getNextDailyReset(now: Date): Date {
+    const next = new Date(
+      Date.UTC(
+        now.getUTCFullYear(),
+        now.getUTCMonth(),
+        now.getUTCDate(),
+        dailyResetHourUtc,
+        dailyResetMinuteUtc,
+        dailyResetSecondUtc,
+        dailyResetMillisecondUtc,
+      ),
+    );
+
+    if (next.getTime() <= now.getTime()) {
+      next.setUTCDate(next.getUTCDate() + 1);
+    }
+
+    return next;
+  }
+
+  function getNextWeeklyReset(now: Date): Date {
+    const nowWeekday = now.getUTCDay();
+    const daysUntilReset = (weeklyResetWeekdayUtc - nowWeekday + 7) % 7;
+    const next = new Date(
+      Date.UTC(
+        now.getUTCFullYear(),
+        now.getUTCMonth(),
+        now.getUTCDate() + daysUntilReset,
+        dailyResetHourUtc,
+        dailyResetMinuteUtc,
+        dailyResetSecondUtc,
+        dailyResetMillisecondUtc,
+      ),
+    );
+
+    if (next.getTime() <= now.getTime()) {
+      next.setUTCDate(next.getUTCDate() + 7);
+    }
+
+    return next;
+  }
+
+  function formatRemainingHhMm(targetTime: Date, now: Date): string {
+    const diffMs = Math.max(0, targetTime.getTime() - now.getTime());
+    const totalMinutes = Math.ceil(diffMs / 60_000);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+
+    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+  }
+
+  function formatRemainingDhhMm(targetTime: Date, now: Date): string {
+    const diffMs = Math.max(0, targetTime.getTime() - now.getTime());
+    const totalMinutes = Math.ceil(diffMs / 60_000);
+    const days = Math.floor(totalMinutes / (24 * 60));
+    const remainingMinutesAfterDays = totalMinutes - days * 24 * 60;
+    const hours = Math.floor(remainingMinutesAfterDays / 60);
+    const minutes = remainingMinutesAfterDays % 60;
+
+    return `${days}:${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+  }
+
+  function formatRemainingDdHhMm(targetTime: Date, now: Date): string {
+    const diffMs = Math.max(0, targetTime.getTime() - now.getTime());
+    const totalMinutes = Math.ceil(diffMs / 60_000);
+    const days = Math.floor(totalMinutes / (24 * 60));
+    const remainingMinutesAfterDays = totalMinutes - days * 24 * 60;
+    const hours = Math.floor(remainingMinutesAfterDays / 60);
+    const minutes = remainingMinutesAfterDays % 60;
+
+    return `${String(days).padStart(2, "0")}:${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+  }
+
+  function getTabUpdateDescription(tab: TaskType): string | null {
+    if (!bootstrapQuery.data) {
+      return null;
+    }
+
+    const now = new Date(nowForCountdown);
+    const isUnseen = isTabUnseen(tab);
+
+    if (tab === "DAILY") {
+      return isUnseen
+        ? `デイリーは当日分の内容に更新されています。確認後に未確認バッジが消えます。次回更新まで: ${formatRemainingHhMm(getNextDailyReset(now), now)}`
+        : `デイリーは当日分の内容で表示中です。次回更新まで: ${formatRemainingHhMm(getNextDailyReset(now), now)}`;
+    }
+
+    if (tab === "WEEKLY") {
+      return isUnseen
+        ? `ウィークリーは最新状態に更新されました。内容を確認すると未確認バッジが消えます。次回更新まで: ${formatRemainingDhhMm(getNextWeeklyReset(now), now)}`
+        : `ウィークリーは最新の更新内容で表示中です。次回更新まで: ${formatRemainingDhhMm(getNextWeeklyReset(now), now)}`;
+    }
+
+    const seasonEndsAt = new Date(bootstrapQuery.data.season.endsAt);
+    const seasonRemaining = formatRemainingDdHhMm(seasonEndsAt, now);
+
+    return isUnseen
+      ? `シーズン更新後の内容です。目標と進行を確認すると未確認バッジが消えます。シーズン終了まで: ${seasonRemaining}`
+      : `このシーズンの内容を表示中です。シーズン終了まで: ${seasonRemaining}`;
+  }
+
   useEffect(() => {
     if (!bootstrapQuery.data) {
       return;
@@ -941,6 +1058,8 @@ export default function Home() {
       : destructiveTarget?.kind === "reset"
         ? "リセットする"
         : "";
+
+    const activeTabDescription = getTabUpdateDescription(activeTab);
 
   if (!sessionInfo) {
     return (
@@ -1019,6 +1138,12 @@ export default function Home() {
                   </Button>
                 ))}
               </div>
+
+              {activeTabDescription && (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                  {activeTabDescription}
+                </div>
+              )}
 
               <div className="grid gap-4 lg:grid-cols-5">
                 <div className="rounded-lg border border-zinc-200 p-4 lg:col-span-2">
