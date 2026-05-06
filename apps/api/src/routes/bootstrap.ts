@@ -41,16 +41,30 @@ bootstrapRouter.get("/", requireAuth, async (req: AuthenticatedRequest, res) => 
             },
         });
 
-        const progress = await tx.userProgress.upsert({
+        const existingProgress = await tx.userProgress.findUnique({
             where: { userId },
-            update: {
-                currentSeasonId: season.id,
-            },
-            create: {
-                userId,
-                currentSeasonId: season.id,
-            },
         });
+
+        const progress = existingProgress
+            ? await tx.userProgress.update({
+                where: { userId },
+                data:
+                    existingProgress.currentSeasonId !== season.id
+                        ? {
+                            currentSeasonId: season.id,
+                            seasonXp: 0,
+                            seasonLevel: 1,
+                        }
+                        : {
+                            currentSeasonId: season.id,
+                        },
+            })
+            : await tx.userProgress.create({
+                data: {
+                    userId,
+                    currentSeasonId: season.id,
+                },
+            });
 
         const seasonState = await tx.userSeasonState.upsert({
             where: {

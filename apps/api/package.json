@@ -10,7 +10,9 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:push": "prisma db push",
-    "test": "echo \"No API tests yet\""
+    "test": "echo \"No API tests yet\"",
+    "setup:season-reset-check": "tsx src/scripts/setup-season-reset-check.ts",
+    "inspect:season-progress": "tsx src/scripts/inspect-season-progress.ts"
   },
   "keywords": [],
   "author": "",
