@@ -1083,9 +1083,14 @@ export default function Home() {
             <h1 className="text-2xl font-bold text-zinc-900">Habit Battle Pass</h1>
             <p className="text-sm text-zinc-600">{sessionInfo.email}</p>
           </div>
-          <Button variant="secondary" onClick={handleSignOut}>
-            ログアウト
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link href="/rewards" prefetch={false}>
+              <Button variant="secondary">報酬一覧</Button>
+            </Link>
+            <Button variant="secondary" onClick={handleSignOut}>
+              ログアウト
+            </Button>
+          </div>
         </div>
       </header>
 

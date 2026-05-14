@@ -5,6 +5,7 @@ import { prisma } from "./lib/prisma";
 import { bootstrapRouter } from "./routes/bootstrap";
 import { healthRouter } from "./routes/health";
 import { meRouter } from "./routes/me";
+import { rewardRouter } from "./routes/rewards";
 import { taskRouter } from "./routes/tasks";
 
 const app = express();
@@ -21,6 +22,7 @@ app.use("/api/health", healthRouter);
 app.use("/api/me", meRouter);
 app.use("/api/bootstrap", bootstrapRouter);
 app.use("/api/tasks", taskRouter);
+app.use("/api/rewards", rewardRouter);
 
 app.get("/", (_req, res) => {
     res.json({ message: "Habit battle pass API is running" });
