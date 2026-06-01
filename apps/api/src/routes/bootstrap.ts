@@ -2,7 +2,7 @@ import { Router } from "express";
 import { defaultXpOptionTemplates } from "../config/game-settings";
 import { prisma } from "../lib/prisma";
 import { AuthenticatedRequest, requireAuth } from "../middleware/auth";
-import { getCurrentSeasonRange } from "../utils/season";
+import { getCurrentSeasonRange, getLastDailyResetAt, getLastWeeklyResetAt } from "../utils/season";
 
 export const bootstrapRouter = Router();
 
@@ -66,7 +66,7 @@ bootstrapRouter.get("/", requireAuth, async (req: AuthenticatedRequest, res) => 
                 },
             });
 
-        const seasonState = await tx.userSeasonState.upsert({
+        let seasonState = await tx.userSeasonState.upsert({
             where: {
                 userId_seasonId: {
                     userId,
@@ -82,6 +82,37 @@ bootstrapRouter.get("/", requireAuth, async (req: AuthenticatedRequest, res) => 
                 seasonUnseen: true,
             },
         });
+
+        const lastDailyResetAt = getLastDailyResetAt();
+        const lastWeeklyResetAt = getLastWeeklyResetAt();
+        const shouldDailyUnseen = !seasonState.dailySeenAt || seasonState.dailySeenAt < lastDailyResetAt;
+        const shouldWeeklyUnseen = !seasonState.weeklySeenAt || seasonState.weeklySeenAt < lastWeeklyResetAt;
+        const shouldSeasonUnseen = !seasonState.seasonSeenAt || seasonState.seasonSeenAt < season.startsAt;
+
+        const unseenUpdate: {
+            dailyUnseen?: boolean;
+            weeklyUnseen?: boolean;
+            seasonUnseen?: boolean;
+        } = {};
+
+        if (shouldDailyUnseen && !seasonState.dailyUnseen) {
+            unseenUpdate.dailyUnseen = true;
+        }
+
+        if (shouldWeeklyUnseen && !seasonState.weeklyUnseen) {
+            unseenUpdate.weeklyUnseen = true;
+        }
+
+        if (shouldSeasonUnseen && !seasonState.seasonUnseen) {
+            unseenUpdate.seasonUnseen = true;
+        }
+
+        if (Object.keys(unseenUpdate).length > 0) {
+            seasonState = await tx.userSeasonState.update({
+                where: { id: seasonState.id },
+                data: unseenUpdate,
+            });
+        }
 
         const optionCount = await tx.xpOption.count({
             where: { userId },
